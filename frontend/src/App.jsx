@@ -1,120 +1,208 @@
-import { useEffect, useState } from 'react';
-import api from './services/api';
+import { useState } from 'react';
+import { INITIAL_MOCK_TRANSACTIONS, formatRupiah } from './data/mockData';
+import LoginPage from './pages/LoginPage';
+import TransactionFormPage from './pages/TransactionFormPage';
+import UploadProofPage from './pages/UploadProofPage';
+import HistoryPage from './pages/HistoryPage';
 
 export default function App() {
-  const [items, setItems] = useState([]);
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  // 1. Autentikasi Pengguna (Mockup)
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('esbe_mock_user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const fetchItems = async () => {
-    setLoading(true);
-    setErrorMsg('');
-    try {
-      const res = await api.get('/items');
-      setItems(res.data.data || []);
-    } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Gagal memuat data dari server.');
-    } finally {
-      setLoading(false);
+  // 2. Navigasi Halaman Aktif ('form' | 'upload' | 'history')
+  const [currentPage, setCurrentPage] = useState('form');
+
+  // 3. State Data Transaksi (Tersimpan di localStorage frontend)
+  const [transactions, setTransactions] = useState(() => {
+    const saved = localStorage.getItem('esbe_mock_transactions');
+    return saved ? JSON.parse(saved) : INITIAL_MOCK_TRANSACTIONS;
+  });
+
+  // Handler Login
+  const handleLoginSuccess = (userData) => {
+    localStorage.setItem('esbe_mock_user', JSON.stringify(userData));
+    setCurrentUser(userData);
+    setCurrentPage('form');
+  };
+
+  // Handler Logout
+  const handleLogout = () => {
+    localStorage.removeItem('esbe_mock_user');
+    setCurrentUser(null);
+  };
+
+  // Handler Simpan Transaksi Baru
+  const handleSaveTransaction = (newTrxData) => {
+    const newTrx = {
+      id: `TRX-${String(transactions.length + 1).padStart(3, '0')}`,
+      ...newTrxData
+    };
+    const updated = [newTrx, ...transactions];
+    setTransactions(updated);
+    localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
+  };
+
+  // Handler Update / Lampirkan Bukti
+  const handleUpdateProof = (trxId, proofUrl) => {
+    const updated = transactions.map((t) =>
+      t.id === trxId ? { ...t, proofUrl } : t
+    );
+    setTransactions(updated);
+    localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
+  };
+
+  // Handler Hapus Transaksi
+  const handleDeleteTransaction = (id) => {
+    if (confirm('Yakin ingin menghapus transaksi ini dari riwayat?')) {
+      const updated = transactions.filter((t) => t.id !== id);
+      setTransactions(updated);
+      localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
     }
   };
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
-    setStatusMsg('');
-
-    try {
-      await api.post('/items', {
-        name,
-        price: Number(price),
-      });
-      setName('');
-      setPrice('');
-      setStatusMsg('Data berhasil disimpan ke back-end!');
-      await fetchItems();
-    } catch (err) {
-      const details = err.response?.data?.details?.join(', ');
-      setErrorMsg(details || err.response?.data?.message || 'Gagal menyimpan data.');
-    } finally {
-      setLoading(false);
+  // Handler Reset Data Contoh
+  const handleResetMockData = () => {
+    if (confirm('Kembalikan data ke riwayat contoh awal?')) {
+      setTransactions(INITIAL_MOCK_TRANSACTIONS);
+      localStorage.setItem('esbe_mock_transactions', JSON.stringify(INITIAL_MOCK_TRANSACTIONS));
     }
   };
 
+  // Perhitungan Ringkasan Kas
+  const totalPemasukan = transactions
+    .filter((t) => t.type === 'pemasukan')
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+
+  const totalPengeluaran = transactions
+    .filter((t) => t.type === 'pengeluaran')
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+
+  const saldoKas = totalPemasukan - totalPengeluaran;
+
+  // JIKA BELUM LOGIN: TAMPILKAN HALAMAN LOGIN (pages/LoginPage.jsx)
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // JIKA SUDAH LOGIN: TAMPILKAN LAYOUT DENGAN NAVIGASI KE MASING-MASING HALAMAN
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4">
-      <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
-        <h1 className="text-2xl font-bold mb-1">Esbe Cash Recap</h1>
-        <p className="text-sm text-slate-400 mb-6">
-          Tes koneksi React (Vite + Tailwind + Axios) ke Express API v1
-        </p>
-
-        {loading && (
-          <div className="mb-4 rounded-lg bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 text-sm text-amber-300">
-            Memproses data...
-          </div>
-        )}
-
-        {errorMsg && (
-          <div className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2.5 text-sm text-rose-300">
-            {errorMsg}
-          </div>
-        )}
-
-        {statusMsg && (
-          <div className="mb-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 text-sm text-emerald-300">
-            {statusMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2.5 mb-6">
-          <input
-            type="text"
-            placeholder="Nama item / layanan"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-          />
-          <input
-            type="number"
-            placeholder="Nominal (Rp)"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            className="w-full sm:w-36 rounded-lg bg-slate-800 border border-slate-700 px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition cursor-pointer"
-          >
-            Simpan
-          </button>
-        </form>
-
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between rounded-lg bg-slate-800/70 border border-slate-700/60 px-4 py-2.5 text-sm"
-            >
-              <span>{item.name}</span>
-              <span className="font-semibold text-indigo-300">
-                Rp{Number(item.price).toLocaleString('id-ID')}
-              </span>
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+      {/* Top Bar Header */}
+      <header className="border-b border-slate-200 bg-white sticky top-0 z-20 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-sm">
+              ₹
             </div>
-          ))}
+            <div>
+              <h1 className="font-bold text-base sm:text-lg text-slate-900 leading-tight">Esbe Cash Recap</h1>
+              <p className="text-[10px] text-slate-500 font-medium">Sistem Rekapitulasi Kas Toko</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs text-slate-600">
+              Masuk sebagai: <strong className="text-indigo-700 font-semibold">{currentUser.name}</strong> ({currentUser.role})
+            </span>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold rounded-lg transition cursor-pointer"
+            >
+              Keluar
+            </button>
+          </div>
         </div>
-      </div>
-    </main>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-5xl mx-auto w-full p-4 sm:p-6 flex-1 space-y-6">
+        {/* Ringkasan Saldo Kas Toko */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Saldo Kas Toko</span>
+            <div className={`text-2xl font-bold mt-1 ${saldoKas >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+              {formatRupiah(saldoKas)}
+            </div>
+          </div>
+          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
+            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Pemasukan (Uang Masuk)</span>
+            <div className="text-2xl font-bold mt-1 text-emerald-600">
+              +{formatRupiah(totalPemasukan)}
+            </div>
+          </div>
+          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
+            <span className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Pengeluaran (Uang Keluar)</span>
+            <div className="text-2xl font-bold mt-1 text-rose-600">
+              -{formatRupiah(totalPengeluaran)}
+            </div>
+          </div>
+        </section>
+
+        {/* Tab Navigasi Antar Halaman */}
+        <div className="flex border-b border-slate-200 space-x-1 sm:space-x-3 overflow-x-auto">
+          <button
+            onClick={() => setCurrentPage('form')}
+            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              currentPage === 'form'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>📝</span> Formulir Transaksi
+          </button>
+          <button
+            onClick={() => setCurrentPage('upload')}
+            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              currentPage === 'upload'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>📎</span> Unggah Bukti
+          </button>
+          <button
+            onClick={() => setCurrentPage('history')}
+            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              currentPage === 'history'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>📋</span> Riwayat Transaksi
+            <span className="text-[11px] px-2 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-200">
+              {transactions.length}
+            </span>
+          </button>
+        </div>
+
+        {/* RENDER HALAMAN SESUAI TAB YANG AKTIF */}
+        {currentPage === 'form' && (
+          <TransactionFormPage
+            onSaveTransaction={handleSaveTransaction}
+            onNavigateToHistory={() => setCurrentPage('history')}
+          />
+        )}
+
+        {currentPage === 'upload' && (
+          <UploadProofPage
+            transactions={transactions}
+            onUpdateProof={handleUpdateProof}
+            onNavigateToHistory={() => setCurrentPage('history')}
+          />
+        )}
+
+        {currentPage === 'history' && (
+          <HistoryPage
+            transactions={transactions}
+            onDeleteTransaction={handleDeleteTransaction}
+            onResetMockData={handleResetMockData}
+            onNavigateToForm={() => setCurrentPage('form')}
+          />
+        )}
+      </main>
+    </div>
   );
 }
