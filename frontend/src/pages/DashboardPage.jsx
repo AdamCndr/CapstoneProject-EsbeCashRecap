@@ -1,300 +1,254 @@
 import { useState } from 'react';
 import { formatRupiah } from '../data/mockData';
+import {
+  card,
+  field,
+  ico,
+  formatDateID,
+  label,
+  methodIcon,
+  methodLabel,
+  PageHeader,
+  shiftHours,
+  shiftLabel,
+  ShiftTag
+} from '../lib/ui';
+
+const sum = (list) => list.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+// Transaksi tanpa metode dianggap tunai, sama seperti tampilan tabel
+const methodOf = (t) => t.paymentMethod || 'tunai';
+const pct = (part, total) => (total > 0 ? Math.round((part / total) * 100) : 0);
+
+// Warna = arti: tunai netral, non-tunai keluarga biru
+const METHODS = [
+  { key: 'tunai', source: 'Laci kas', tone: 'bg-neutral-800' },
+  { key: 'qris', source: 'Merchant QRIS', tone: 'bg-blue-800' },
+  { key: 'transfer', source: 'Rekening toko', tone: 'bg-blue-300' }
+];
+const SHIFTS = [
+  { key: 'pagi', tone: 'bg-amber-500' },
+  { key: 'siang', tone: 'bg-blue-800' }
+];
+
+// Baris buku kas: nama ..... nominal
+function LedgerRow({ tone, name, amount, share }) {
+  return (
+    <li className="flex items-end gap-2 text-sm leading-5">
+      <span className="flex items-center gap-2 text-neutral-700">
+        <span className={`h-2 w-2 rounded-full ${tone}`} aria-hidden="true" />
+        {name}
+      </span>
+      <span className="mb-1 flex-1 border-b border-dotted border-neutral-300" aria-hidden="true" />
+      <span className="font-medium tabular-nums text-neutral-900">{amount}</span>
+      {share != null && <span className="w-10 text-right text-xs tabular-nums text-neutral-500">{share}%</span>}
+    </li>
+  );
+}
 
 export default function DashboardPage({ transactions }) {
   const [selectedDate, setSelectedDate] = useState('2026-11-20');
   const [selectedShift, setSelectedShift] = useState('semua'); // 'semua' | 'pagi' | 'siang'
 
-  // Filter transaksi berdasarkan tanggal & shift
-  const filtered = transactions.filter((t) => {
-    const matchDate = !selectedDate || t.date === selectedDate;
-    const matchShift = selectedShift === 'semua' || t.shift === selectedShift;
-    return matchDate && matchShift;
-  });
+  // Filter tanggal, lalu shift
+  const onDate = transactions.filter((t) => !selectedDate || t.date === selectedDate);
+  const filtered = onDate.filter((t) => selectedShift === 'semua' || t.shift === selectedShift);
 
-  // Perhitungan Metode Pembayaran (Hanya pemasukan)
-  const pemasukanList = filtered.filter((t) => t.type === 'pemasukan');
-  const totalTunai = pemasukanList
-    .filter((t) => t.paymentMethod === 'tunai')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  const totalQris = pemasukanList
-    .filter((t) => t.paymentMethod === 'qris')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  const totalTransfer = pemasukanList
-    .filter((t) => t.paymentMethod === 'transfer')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  const totalPemasukan = totalTunai + totalQris + totalTransfer;
-
-  const totalPengeluaran = filtered
-    .filter((t) => t.type === 'pengeluaran')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
+  // Pemasukan per metode
+  const income = filtered.filter((t) => t.type === 'pemasukan');
+  const totalPemasukan = sum(income);
+  const totalPengeluaran = sum(filtered.filter((t) => t.type === 'pengeluaran'));
   const totalBersih = totalPemasukan - totalPengeluaran;
-
-  // Breakdown Pendapatan Shift Pagi vs Siang pada tanggal terpilih
-  const onSelectedDate = transactions.filter((t) => !selectedDate || t.date === selectedDate);
-  const omsetShiftPagi = onSelectedDate
-    .filter((t) => t.shift === 'pagi' && t.type === 'pemasukan')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  const omsetShiftSiang = onSelectedDate
-    .filter((t) => t.shift === 'siang' && t.type === 'pemasukan')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  // Persentase Metode Pembayaran
-  const pctTunai = totalPemasukan > 0 ? Math.round((totalTunai / totalPemasukan) * 100) : 0;
+  const totals = Object.fromEntries(METHODS.map((m) => [m.key, sum(income.filter((t) => methodOf(t) === m.key))]));
+  const nonTunai = totals.qris + totals.transfer;
+  const pctTunai = pct(totals.tunai, totalPemasukan);
   const pctNonTunai = totalPemasukan > 0 ? 100 - pctTunai : 0;
+
+  // Pendapatan per shift pada tanggal terpilih (tidak ikut filter shift)
+  const shiftTotals = SHIFTS.map((s) => ({
+    ...s,
+    total: sum(onDate.filter((t) => t.shift === s.key && t.type === 'pemasukan'))
+  }));
+  const shiftSum = shiftTotals.reduce((acc, s) => acc + s.total, 0);
 
   return (
     <div className="space-y-6">
-      {/* Header Dashboard & Filter */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
-              Role: Pemilik Toko
-            </span>
-            <span className="text-xs text-slate-400">• Fotocopy Esbe</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">Dashboard Rekapitulasi Kas</h2>
-          <p className="text-xs text-slate-500">
-            Pantau rincian pendapatan tunai & non-tunai per tanggal dan shift operasional.
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Dashboard pemilik · Fotocopy Esbe"
+        title={formatDateID(selectedDate)}
+        description="Pendapatan tunai dan non-tunai per tanggal dan shift"
+        actions={
+          <>
+            <div>
+              <label htmlFor="dash-date" className={label}>
+                Tanggal
+              </label>
+              <input
+                id="dash-date"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={`${field} w-auto cursor-pointer`}
+              />
+            </div>
+            <div>
+              <label htmlFor="dash-shift" className={label}>
+                Shift
+              </label>
+              <select
+                id="dash-shift"
+                value={selectedShift}
+                onChange={(e) => setSelectedShift(e.target.value)}
+                className={`${field} w-auto cursor-pointer`}
+              >
+                <option value="semua">Semua shift</option>
+                <option value="pagi">Pagi</option>
+                <option value="siang">Siang</option>
+              </select>
+            </div>
+          </>
+        }
+      />
 
-        {/* Filter Toolbar */}
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Tanggal
-            </label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 text-xs font-medium focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Shift
-            </label>
-            <select
-              value={selectedShift}
-              onChange={(e) => setSelectedShift(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 text-xs font-medium focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="semua">Semua Shift</option>
-              <option value="pagi">Shift Pagi</option>
-              <option value="siang">Shift Siang</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Kartu Ringkasan Metode Pembayaran (Sesuai Use Case Esbe) */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        {/* Total Bersih */}
-        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Total Bersih (Kas Masuk - Keluar)
-          </span>
-          <div className={`text-2xl font-bold mt-1 ${totalBersih >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+      {/* Angka utama */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div className={`${card} p-5`}>
+          <p className="text-[13px] leading-5 text-neutral-600">Total bersih</p>
+          <p
+            className={`mt-2 text-[28px] leading-8 font-medium tabular-nums ${totalBersih >= 0 ? 'text-neutral-900' : 'text-red-600'
+              }`}
+          >
             {formatRupiah(totalBersih)}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">
-            Pengeluaran: -{formatRupiah(totalPengeluaran)}
-          </span>
+          </p>
+          <p className="mt-1 text-xs leading-4 text-neutral-500">
+            Pemasukan {formatRupiah(totalPemasukan)} · Pengeluaran {formatRupiah(totalPengeluaran)}
+          </p>
         </div>
 
-        {/* Pendapatan Tunai */}
-        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-              💵 Tunai
-            </span>
-            <span className="text-xs font-bold text-slate-400">{pctTunai}%</span>
-          </div>
-          <div className="text-2xl font-bold mt-1 text-slate-900">
-            {formatRupiah(totalTunai)}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Laci Kas Toko</span>
-        </div>
-
-        {/* Pendapatan QRIS */}
-        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-              📱 QRIS
-            </span>
-            <span className="text-xs font-bold text-slate-400">
-              {totalPemasukan > 0 ? Math.round((totalQris / totalPemasukan) * 100) : 0}%
-            </span>
-          </div>
-          <div className="text-2xl font-bold mt-1 text-slate-900">
-            {formatRupiah(totalQris)}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Rekap Merchant QRIS</span>
-        </div>
-
-        {/* Pendapatan Transfer Bank */}
-        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-              🏦 Transfer Bank
-            </span>
-            <span className="text-xs font-bold text-slate-400">
-              {totalPemasukan > 0 ? Math.round((totalTransfer / totalPemasukan) * 100) : 0}%
-            </span>
-          </div>
-          <div className="text-2xl font-bold mt-1 text-slate-900">
-            {formatRupiah(totalTransfer)}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Rekening Toko</span>
-        </div>
+        {METHODS.map(({ key, source }) => {
+          const Icon = methodIcon[key];
+          return (
+            <div key={key} className={`${card} p-5`}>
+              <div className="flex items-center justify-between text-[13px] leading-5 text-neutral-600">
+                <span className="flex items-center gap-2">
+                  <Icon {...ico} />
+                  {methodLabel[key]}
+                </span>
+                <span className="tabular-nums text-neutral-500">{pct(totals[key], totalPemasukan)}%</span>
+              </div>
+              <p className="mt-2 text-[28px] leading-8 font-medium tabular-nums text-neutral-900">
+                {formatRupiah(totals[key])}
+              </p>
+              <p className="mt-1 text-xs leading-4 text-neutral-500">{source}</p>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Bar Komparasi Tunai vs Non-Tunai & Perbandingan Shift */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Rasio Tunai vs Non-Tunai */}
-        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
-          <h3 className="text-sm font-bold text-slate-800 mb-1">
-            Proporsi Metode Pendapatan
-          </h3>
-          <p className="text-xs text-slate-500 mb-3">
-            Perbandingan uang tunai fisik vs non-tunai (QRIS + Transfer).
+      {/* Proporsi metode dan rekap per shift */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
+        <div className={`${card} p-6`}>
+          <h3 className="text-base leading-6 font-medium text-neutral-900">Proporsi metode pembayaran</h3>
+          <p className="mt-1 text-[13px] leading-5 text-neutral-600">Uang tunai fisik dibanding QRIS dan transfer</p>
+
+          <div
+            className="mt-5 flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-neutral-100"
+            role="img"
+            aria-label={`Tunai ${pctTunai}%, non-tunai ${pctNonTunai}%`}
+          >
+            {totalPemasukan > 0 &&
+              METHODS.map(
+                (m) =>
+                  totals[m.key] > 0 && (
+                    <div
+                      key={m.key}
+                      style={{ width: `${(totals[m.key] / totalPemasukan) * 100}%` }}
+                      className={m.tone}
+                    />
+                  )
+              )}
+          </div>
+
+          <ul className="mt-5 space-y-2">
+            {METHODS.map((m) => (
+              <LedgerRow
+                key={m.key}
+                tone={m.tone}
+                name={methodLabel[m.key]}
+                amount={formatRupiah(totals[m.key])}
+                share={pct(totals[m.key], totalPemasukan)}
+              />
+            ))}
+          </ul>
+          <p className="mt-4 flex justify-between border-t border-neutral-900/10 pt-3 text-[13px] leading-5 text-neutral-600">
+            <span>Non-tunai (QRIS + transfer)</span>
+            <span className="tabular-nums">
+              {formatRupiah(nonTunai)} · {pctNonTunai}%
+            </span>
           </p>
-
-          <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden flex mb-3">
-            <div
-              style={{ width: `${pctTunai}%` }}
-              className="bg-emerald-500 h-full transition-all duration-300"
-              title={`Tunai: ${pctTunai}%`}
-            ></div>
-            <div
-              style={{ width: `${pctNonTunai}%` }}
-              className="bg-indigo-600 h-full transition-all duration-300"
-              title={`Non-Tunai: ${pctNonTunai}%`}
-            ></div>
-          </div>
-
-          <div className="flex justify-between text-xs text-slate-600 font-medium">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-emerald-500 rounded-sm"></span>
-              <span>Tunai: <strong>{formatRupiah(totalTunai)}</strong> ({pctTunai}%)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-indigo-600 rounded-sm"></span>
-              <span>Non-Tunai: <strong>{formatRupiah(totalQris + totalTransfer)}</strong> ({pctNonTunai}%)</span>
-            </div>
-          </div>
         </div>
 
-        {/* Perbandingan Shift Pagi vs Siang */}
-        <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-xs">
-          <h3 className="text-sm font-bold text-slate-800 mb-1">
-            Rekap Pendapatan per Shift ({selectedDate || 'Semua Tanggal'})
-          </h3>
-          <p className="text-xs text-slate-500 mb-3">
-            Memudahkan pemilik mencocokkan setoran kas tiap pergantian shift karyawan.
-          </p>
+        <div className={`${card} p-6`}>
+          <h3 className="text-base leading-6 font-medium text-neutral-900">Rekap per shift</h3>
+          <p className="mt-1 text-[13px] leading-5 text-neutral-600">Untuk mencocokkan setoran saat pergantian shift</p>
 
-          <div className="space-y-2.5">
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-amber-700">☀️ Shift Pagi (08:00 - 14:00)</span>
-                <span className="text-slate-900">{formatRupiah(omsetShiftPagi)}</span>
+          <div className="mt-5 space-y-5">
+            {shiftTotals.map((s) => (
+              <div key={s.key}>
+                <ul>
+                  <LedgerRow tone={s.tone} name={`${shiftLabel[s.key]} · ${shiftHours[s.key]}`} amount={formatRupiah(s.total)} />
+                </ul>
+                <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-neutral-100">
+                  <div
+                    style={{ width: `${shiftSum > 0 ? (s.total / shiftSum) * 100 : 0}%` }}
+                    className={`h-full ${s.tone}`}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  style={{
-                    width: `${
-                      omsetShiftPagi + omsetShiftSiang > 0
-                        ? (omsetShiftPagi / (omsetShiftPagi + omsetShiftSiang)) * 100
-                        : 0
-                    }%`
-                  }}
-                  className="bg-amber-500 h-full"
-                ></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-blue-700">⛅ Shift Siang (14:00 - 21:00)</span>
-                <span className="text-slate-900">{formatRupiah(omsetShiftSiang)}</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  style={{
-                    width: `${
-                      omsetShiftPagi + omsetShiftSiang > 0
-                        ? (omsetShiftSiang / (omsetShiftPagi + omsetShiftSiang)) * 100
-                        : 0
-                    }%`
-                  }}
-                  className="bg-blue-600 h-full"
-                ></div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Daftar Transaksi Sesuai Filter Dashboard */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 mb-3">
-          Rincian Transaksi ({filtered.length} transaksi pada filter aktif)
-        </h3>
+      {/* Rincian transaksi */}
+      <div className={`${card} p-6`}>
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h3 className="text-base leading-6 font-medium text-neutral-900">Rincian transaksi</h3>
+          <span className="text-xs tabular-nums text-neutral-500">{filtered.length} transaksi</span>
+        </div>
 
         {filtered.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed border-slate-200">
-            Tidak ada transaksi pada tanggal atau shift yang dipilih.
+          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 py-12 text-center text-sm text-neutral-600">
+            Data belum tersedia untuk tanggal dan shift ini
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto rounded-xl border border-neutral-900/10">
+            <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase bg-slate-50">
-                  <th className="py-2.5 px-3">Waktu / ID</th>
-                  <th className="py-2.5 px-3">Keterangan</th>
-                  <th className="py-2.5 px-3">Shift</th>
-                  <th className="py-2.5 px-3">Metode</th>
-                  <th className="py-2.5 px-3 text-right">Nominal</th>
+                <tr className="bg-neutral-50 text-[13px] leading-5 text-neutral-600">
+                  <th className="px-4 py-3 font-medium">Waktu</th>
+                  <th className="px-4 py-3 font-medium">Keterangan</th>
+                  <th className="px-4 py-3 font-medium">Shift</th>
+                  <th className="px-4 py-3 font-medium">Metode</th>
+                  <th className="px-4 py-3 text-right font-medium">Nominal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-neutral-900/10">
                 {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50">
-                    <td className="py-2 px-3 whitespace-nowrap">
-                      <span className="font-semibold text-slate-800">{t.time || '-'}</span>
-                      <span className="text-[10px] text-slate-400 ml-1.5 font-mono">({t.id})</span>
+                  <tr key={t.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="tabular-nums text-neutral-900">{t.time || '-'}</div>
+                      <div className="font-mono text-xs text-neutral-500">{t.id}</div>
                     </td>
-                    <td className="py-2 px-3 font-medium text-slate-800">{t.title}</td>
-                    <td className="py-2 px-3 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          t.shift === 'pagi'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    <td className="px-4 py-3 text-neutral-900">{t.title}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <ShiftTag shift={t.shift} />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-neutral-700">{methodLabel[methodOf(t)] || t.paymentMethod}</td>
+                    <td
+                      className={`px-4 py-3 text-right font-medium whitespace-nowrap tabular-nums ${t.type === 'pemasukan' ? 'text-neutral-900' : 'text-red-600'
                         }`}
-                      >
-                        {t.shift === 'pagi' ? 'Pagi' : 'Siang'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 font-semibold uppercase">
-                        {t.paymentMethod || 'Tunai'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-right font-bold whitespace-nowrap">
-                      <span className={t.type === 'pemasukan' ? 'text-emerald-600' : 'text-rose-600'}>
-                        {t.type === 'pemasukan' ? '+' : '-'} {formatRupiah(t.amount)}
-                      </span>
+                    >
+                      {t.type === 'pemasukan' ? '+' : '−'} {formatRupiah(t.amount)}
                     </td>
                   </tr>
                 ))}
@@ -306,4 +260,3 @@ export default function DashboardPage({ transactions }) {
     </div>
   );
 }
-

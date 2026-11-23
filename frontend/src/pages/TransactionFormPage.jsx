@@ -1,29 +1,49 @@
 import { useState } from 'react';
+import { ArrowRight, Camera, Check, ScanText } from 'lucide-react';
+import {
+  btnGhost,
+  btnPrimary,
+  btnSecondary,
+  card,
+  field,
+  hint,
+  ico,
+  label,
+  methodLabel,
+  motion,
+  Notice,
+  nowHHMM,
+  PageHeader,
+  shiftHours,
+  todayISO
+} from '../lib/ui';
+
+const emptyForm = () => ({
+  title: '',
+  type: 'pemasukan',
+  category: 'Jasa Fotokopi',
+  paymentMethod: 'tunai', // tunai | qris | transfer
+  shift: 'pagi', // pagi | siang
+  amount: '',
+  date: todayISO(),
+  time: nowHHMM(),
+  notes: '',
+  proofUrl: ''
+});
 
 export default function TransactionFormPage({ onSaveTransaction, onNavigateToHistory, onNavigateToOcr }) {
-  const [form, setForm] = useState({
-    title: '',
-    type: 'pemasukan',
-    category: 'Jasa Fotokopi',
-    paymentMethod: 'tunai', // tunai | qris | transfer
-    shift: 'pagi', // pagi | siang
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':'),
-    notes: '',
-    proofUrl: ''
-  });
-
+  const [form, setForm] = useState(emptyForm);
   const [proofPreview, setProofPreview] = useState('');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  // Handler Upload Foto Bukti Struk/Nota
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
   const handleProofChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Mohon pilih file bertipe gambar (JPG, PNG, JPEG).');
+      setFeedback({ type: 'error', message: 'File harus berupa gambar (JPG atau PNG)' });
       return;
     }
 
@@ -31,6 +51,7 @@ export default function TransactionFormPage({ onSaveTransaction, onNavigateToHis
     reader.onloadend = () => {
       setProofPreview(reader.result);
       setForm((prev) => ({ ...prev, proofUrl: reader.result }));
+      setFeedback({ type: '', message: '' });
     };
     reader.readAsDataURL(file);
   };
@@ -44,7 +65,7 @@ export default function TransactionFormPage({ onSaveTransaction, onNavigateToHis
     e.preventDefault();
 
     if (!form.title.trim() || !form.amount || Number(form.amount) <= 0) {
-      setFeedback({ type: 'error', message: 'Mohon lengkapi keterangan dan nominal transaksi.' });
+      setFeedback({ type: 'error', message: 'Lengkapi keterangan dan nominal transaksi' });
       return;
     }
 
@@ -63,277 +84,229 @@ export default function TransactionFormPage({ onSaveTransaction, onNavigateToHis
 
     onSaveTransaction(newTrx);
 
-    // Reset Form
-    setForm({
-      title: '',
-      type: 'pemasukan',
-      category: 'Jasa Fotokopi',
-      paymentMethod: 'tunai',
-      shift: 'pagi',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':'),
-      notes: '',
-      proofUrl: ''
-    });
+    setForm(emptyForm());
     setProofPreview('');
-
     setFeedback({
       type: 'success',
-      message: `Transaksi "${newTrx.title}" (${newTrx.paymentMethod.toUpperCase()} - Shift ${newTrx.shift}) berhasil dicatat!`
+      message: `${newTrx.title} (${methodLabel[newTrx.paymentMethod]}, shift ${newTrx.shift}) tersimpan`
     });
-
-    setTimeout(() => {
-      setFeedback({ type: '', message: '' });
-    }, 4000);
+    setTimeout(() => setFeedback({ type: '', message: '' }), 4000);
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Catat Pendapatan & Transaksi</h2>
-          <p className="text-xs text-slate-500">
-            Pencatatan pendapatan harian UMKM Esbe per shift (Pagi/Siang) & metode pembayaran.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {onNavigateToOcr && (
-            <button
-              type="button"
-              onClick={onNavigateToOcr}
-              className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 font-semibold cursor-pointer"
-            >
-              ⚡ Coba Simulasi OCR
-            </button>
-          )}
-          {onNavigateToHistory && (
-            <button
-              type="button"
-              onClick={onNavigateToHistory}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline cursor-pointer"
-            >
-              Lihat Riwayat &rarr;
-            </button>
-          )}
-        </div>
-      </div>
-
-      {feedback.message && (
-        <div
-          className={`mb-5 p-3.5 rounded-lg text-sm border ${
-            feedback.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : 'bg-rose-50 border-rose-200 text-rose-800'
-          }`}
-        >
-          {feedback.message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Baris 1: Shift Kerja & Metode Pembayaran (Sesuai Use Case Esbe) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-          {/* Shift Kerja */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Shift Kerja <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={form.shift}
-              onChange={(e) => setForm({ ...form, shift: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="pagi">☀️ Shift Pagi (08:00 - 14:00)</option>
-              <option value="siang">⛅ Shift Siang (14:00 - 21:00)</option>
-            </select>
-          </div>
-
-          {/* Metode Pembayaran */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Metode Pembayaran <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={form.paymentMethod}
-              onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="tunai">💵 Tunai (Cash Fisik)</option>
-              <option value="qris">📱 QRIS Merchant Esbe</option>
-              <option value="transfer">🏦 Transfer Bank</option>
-            </select>
-          </div>
-
-          {/* Jenis Kas */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Jenis Arus Kas <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="pemasukan">📥 Pemasukan (Pendapatan)</option>
-              <option value="pengeluaran">📤 Pengeluaran (Beli Kertas/Tinta/dll)</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Judul Transaksi */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Keterangan Layanan / Barang <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Misal: Fotokopi Modul 50 Lembar / Print Warna"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 text-sm focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Kategori */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Kategori Layanan
-            </label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="Jasa Fotokopi">Jasa Fotokopi & Jilid</option>
-              <option value="Percetakan & ATK">Percetakan & Penjualan ATK</option>
-              <option value="Perlengkapan">Perlengkapan / Bahan Baku</option>
-              <option value="Maintenance">Maintenance Mesin</option>
-              <option value="Lain-lain">Lain-lain</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Nominal */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Nominal Rupiah (Rp) <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              placeholder="Contoh: 25000"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 text-sm focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Tanggal */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Tanggal Transaksi <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            />
-          </div>
-
-          {/* Jam / Waktu */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Jam Transaksi
-            </label>
-            <input
-              type="time"
-              value={form.time}
-              onChange={(e) => setForm({ ...form, time: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* Catatan */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Catatan Tambahan (Opsional)
-          </label>
-          <textarea
-            rows="2"
-            placeholder="Catatan nama pemesan, nomor referensi QRIS, dll."
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 text-sm focus:ring-2 focus:ring-indigo-500"
-          ></textarea>
-        </div>
-
-        {/* BAGIAN UNGGAH BUKTI TRANSAKSI (Terutama untuk QRIS/Transfer) */}
-        <div className="pt-2 border-t border-slate-100">
-          <label className="block text-xs font-semibold text-slate-700 mb-2">
-            📎 Unggah Foto Struk / Bukti Non-Tunai (QRIS / Transfer)
-          </label>
-
-          {!proofPreview ? (
-            <div className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-xl p-5 text-center bg-slate-50 transition">
-              <input
-                type="file"
-                id="proofUpload"
-                accept="image/*"
-                onChange={handleProofChange}
-                className="hidden"
-              />
-              <label
-                htmlFor="proofUpload"
-                className="cursor-pointer flex flex-col items-center justify-center space-y-1"
-              >
-                <span className="text-3xl">📷</span>
-                <span className="text-sm font-semibold text-indigo-600 hover:underline">
-                  Pilih foto struk / screenshot QRIS
-                </span>
-                <span className="text-[11px] text-slate-500">
-                  Didukung: JPG, PNG, JPEG (Bisa langsung dari kamera HP)
-                </span>
-              </label>
-            </div>
-          ) : (
-            <div className="relative inline-block border border-slate-200 rounded-xl p-2 bg-slate-50 shadow-sm">
-              <img
-                src={proofPreview}
-                alt="Pratinjau Bukti"
-                className="max-h-48 rounded-lg object-contain bg-white"
-              />
-              <button
-                type="button"
-                onClick={handleRemoveProof}
-                className="absolute top-3 right-3 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-md shadow cursor-pointer"
-              >
-                ✕ Hapus
+    <div>
+      <PageHeader
+        title="Catat pendapatan"
+        description="Pendapatan harian per shift dan metode pembayaran"
+        actions={
+          <>
+            {onNavigateToOcr && (
+              <button type="button" onClick={onNavigateToOcr} className={btnSecondary}>
+                <ScanText {...ico} />
+                Simulasi OCR
               </button>
-              <p className="text-[11px] text-emerald-600 mt-1.5 text-center font-medium">
-                ✓ Bukti siap disimpan bersama transaksi
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+            {onNavigateToHistory && (
+              <button type="button" onClick={onNavigateToHistory} className={btnGhost}>
+                Lihat riwayat
+                <ArrowRight {...ico} />
+              </button>
+            )}
+          </>
+        }
+      />
 
-        {/* Tombol Simpan */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition duration-150 cursor-pointer shadow-md flex items-center justify-center gap-2"
-          >
-            <span>💾</span> Simpan Pendapatan ke Rekap
+      <div className={`${card} p-6 sm:p-8`}>
+        {feedback.message && (
+          <Notice kind={feedback.type === 'success' ? 'success' : 'error'} className="mb-6">
+            {feedback.message}
+          </Notice>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Shift, metode, jenis kas */}
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-neutral-900/10 bg-neutral-50 p-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="shift" className={label}>
+                Shift kerja
+              </label>
+              <select id="shift" value={form.shift} onChange={set('shift')} className={`${field} cursor-pointer`}>
+                <option value="pagi">Pagi · {shiftHours.pagi}</option>
+                <option value="siang">Siang · {shiftHours.siang}</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="method" className={label}>
+                Metode pembayaran
+              </label>
+              <select
+                id="method"
+                value={form.paymentMethod}
+                onChange={set('paymentMethod')}
+                className={`${field} cursor-pointer`}
+              >
+                <option value="tunai">Tunai</option>
+                <option value="qris">QRIS</option>
+                <option value="transfer">Transfer bank</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="type" className={label}>
+                Jenis kas
+              </label>
+              <select id="type" value={form.type} onChange={set('type')} className={`${field} cursor-pointer`}>
+                <option value="pemasukan">Pemasukan</option>
+                <option value="pengeluaran">Pengeluaran</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="title" className={label}>
+                Keterangan layanan atau barang
+              </label>
+              <input
+                id="title"
+                type="text"
+                required
+                placeholder="Contoh: fotokopi modul 50 lembar"
+                value={form.title}
+                onChange={set('title')}
+                className={field}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="category" className={label}>
+                Kategori
+              </label>
+              <select
+                id="category"
+                value={form.category}
+                onChange={set('category')}
+                className={`${field} cursor-pointer`}
+              >
+                <option value="Jasa Fotokopi">Jasa fotokopi dan jilid</option>
+                <option value="Percetakan & ATK">Percetakan dan penjualan ATK</option>
+                <option value="Perlengkapan">Perlengkapan dan bahan baku</option>
+                <option value="Maintenance">Maintenance mesin</option>
+                <option value="Lain-lain">Lain-lain</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="amount" className={label}>
+                Nominal (Rp)
+              </label>
+              <input
+                id="amount"
+                type="number"
+                inputMode="numeric"
+                required
+                min="1"
+                placeholder="25000"
+                value={form.amount}
+                onChange={set('amount')}
+                className={`${field} tabular-nums`}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="date" className={label}>
+                Tanggal
+              </label>
+              <input
+                id="date"
+                type="date"
+                required
+                value={form.date}
+                onChange={set('date')}
+                className={`${field} cursor-pointer`}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="time" className={label}>
+                Jam
+              </label>
+              <input
+                id="time"
+                type="time"
+                value={form.time}
+                onChange={set('time')}
+                className={`${field} cursor-pointer`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className={label}>
+              Catatan <span className="font-normal text-neutral-500">(opsional)</span>
+            </label>
+            <textarea
+              id="notes"
+              rows="2"
+              placeholder="Nama pemesan, nomor referensi QRIS"
+              value={form.notes}
+              onChange={set('notes')}
+              className={`${field} h-auto py-2`}
+            />
+          </div>
+
+          {/* Bukti non-tunai */}
+          <div className="border-t border-neutral-900/10 pt-6">
+            <p className={label}>
+              Bukti QRIS atau transfer <span className="font-normal text-neutral-500">(opsional)</span>
+            </p>
+
+            {!proofPreview ? (
+              <div>
+                <input
+                  type="file"
+                  id="proofUpload"
+                  accept="image/*"
+                  onChange={handleProofChange}
+                  className="peer sr-only"
+                />
+                <label
+                  htmlFor="proofUpload"
+                  className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center hover:border-blue-800 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-800 ${motion}`}
+                >
+                  <Camera size={20} strokeWidth={1.5} className="text-neutral-500" aria-hidden="true" />
+                  <span className="text-sm font-medium text-neutral-900">Pilih foto struk atau screenshot</span>
+                  <span className="text-xs text-neutral-500">JPG atau PNG, bisa langsung dari kamera ponsel</span>
+                </label>
+              </div>
+            ) : (
+              <div className="inline-block max-w-full rounded-xl border border-neutral-900/10 bg-neutral-50 p-2">
+                <img src={proofPreview} alt="Pratinjau bukti" className="max-h-48 rounded-lg bg-white object-contain" />
+                <div className="mt-2 flex items-center justify-between gap-4 px-1 text-xs leading-4">
+                  <span className="flex items-center gap-2 text-emerald-700">
+                    <Check {...ico} />
+                    Siap disimpan bersama transaksi
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveProof}
+                    className="cursor-pointer font-medium text-neutral-600 underline hover:text-neutral-900"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button type="submit" className={`${btnPrimary} w-full`}>
+            Simpan ke rekap
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

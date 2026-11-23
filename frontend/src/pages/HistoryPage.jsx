@@ -1,5 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Eye, Plus, Search, Trash2, X } from 'lucide-react';
 import { formatRupiah } from '../data/mockData';
+import {
+  btnGhost,
+  btnPrimary,
+  btnSecondary,
+  card,
+  field,
+  ico,
+  iconBtn,
+  methodLabel,
+  PageHeader,
+  ShiftTag
+} from '../lib/ui';
 
 export default function HistoryPage({
   transactions,
@@ -12,210 +25,253 @@ export default function HistoryPage({
   const [filterShift, setFilterShift] = useState('semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProofModal, setSelectedProofModal] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
-  // Filter Riwayat Transaksi
+  // Tutup modal bukti dengan Escape
+  useEffect(() => {
+    if (!selectedProofModal) return;
+    const onKey = (e) => e.key === 'Escape' && setSelectedProofModal(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedProofModal]);
+
+  const q = searchQuery.trim().toLowerCase();
   const filteredTransactions = transactions.filter((trx) => {
     const matchType = filterType === 'semua' || trx.type === filterType;
-    const matchMethod = filterMethod === 'semua' || trx.paymentMethod === filterMethod;
+    const matchMethod = filterMethod === 'semua' || (trx.paymentMethod || 'tunai') === filterMethod;
     const matchShift = filterShift === 'semua' || trx.shift === filterShift;
-    const matchSearch =
-      trx.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trx.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (trx.referenceId && trx.referenceId.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchType && matchMethod && matchShift && matchSearch;
+    const haystack = [trx.title, trx.category, trx.id, trx.referenceId].filter(Boolean).join(' ').toLowerCase();
+    return matchType && matchMethod && matchShift && (!q || haystack.includes(q));
   });
 
+  const select = `${field} cursor-pointer`;
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Riwayat Transaksi</h2>
-          <p className="text-xs text-slate-500">
-            Daftar kas masuk & keluar lengkap dengan metode pembayaran dan shift kerja.
-          </p>
+    <div>
+      <PageHeader
+        title="Riwayat transaksi"
+        description="Kas masuk dan keluar menurut metode pembayaran dan shift"
+        actions={
+          <>
+            {confirmReset ? (
+              <>
+                <span className="self-center text-sm text-neutral-600">Kembalikan ke data contoh?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onResetMockData();
+                    setConfirmReset(false);
+                  }}
+                  className={btnSecondary}
+                >
+                  Ya, reset
+                </button>
+                <button type="button" onClick={() => setConfirmReset(false)} className={btnGhost}>
+                  Batal
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => setConfirmReset(true)} className={btnGhost}>
+                Reset data contoh
+              </button>
+            )}
+            {onNavigateToForm && (
+              <button type="button" onClick={onNavigateToForm} className={btnPrimary}>
+                <Plus {...ico} />
+                Catat pendapatan
+              </button>
+            )}
+          </>
+        }
+      />
+
+      <div className={`${card} p-6`}>
+        {/* Filter */}
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative">
+            <Search
+              {...ico}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-neutral-500"
+            />
+            <input
+              type="search"
+              aria-label="Cari transaksi"
+              placeholder="Cari transaksi atau ID"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`${field} pl-9`}
+            />
+          </div>
+
+          <select aria-label="Filter shift" value={filterShift} onChange={(e) => setFilterShift(e.target.value)} className={select}>
+            <option value="semua">Semua shift</option>
+            <option value="pagi">Pagi</option>
+            <option value="siang">Siang</option>
+          </select>
+
+          <select aria-label="Filter metode" value={filterMethod} onChange={(e) => setFilterMethod(e.target.value)} className={select}>
+            <option value="semua">Semua metode</option>
+            <option value="tunai">Tunai</option>
+            <option value="qris">QRIS</option>
+            <option value="transfer">Transfer</option>
+          </select>
+
+          <select aria-label="Filter jenis kas" value={filterType} onChange={(e) => setFilterType(e.target.value)} className={select}>
+            <option value="semua">Semua jenis kas</option>
+            <option value="pemasukan">Pemasukan</option>
+            <option value="pengeluaran">Pengeluaran</option>
+          </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          {onNavigateToForm && (
-            <button
-              onClick={onNavigateToForm}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer shadow-xs"
-            >
-              + Catat Pendapatan
-            </button>
-          )}
-          <button
-            onClick={onResetMockData}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-medium rounded-lg transition cursor-pointer text-slate-700"
-            title="Kembalikan data ke contoh awal"
-          >
-            Reset Contoh Data
-          </button>
-        </div>
-      </div>
+        <p className="mb-3 text-xs tabular-nums text-neutral-500">
+          {filteredTransactions.length} dari {transactions.length} transaksi
+        </p>
 
-      {/* Filter Toolbar Multi-Kriteria (Sesuai Kebutuhan Pemilik & Karyawan) */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mb-4">
-        <input
-          type="text"
-          placeholder="Cari transaksi / Ref ID..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 text-xs focus:ring-2 focus:ring-indigo-500"
-        />
-
-        <select
-          value={filterShift}
-          onChange={(e) => setFilterShift(e.target.value)}
-          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-        >
-          <option value="semua">Semua Shift</option>
-          <option value="pagi">☀️ Shift Pagi</option>
-          <option value="siang">⛅ Shift Siang</option>
-        </select>
-
-        <select
-          value={filterMethod}
-          onChange={(e) => setFilterMethod(e.target.value)}
-          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-        >
-          <option value="semua">Semua Metode</option>
-          <option value="tunai">💵 Tunai</option>
-          <option value="qris">📱 QRIS</option>
-          <option value="transfer">🏦 Transfer Bank</option>
-        </select>
-
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-        >
-          <option value="semua">Semua Jenis Kas</option>
-          <option value="pemasukan">📥 Pemasukan Saja</option>
-          <option value="pengeluaran">📤 Pengeluaran Saja</option>
-        </select>
-      </div>
-
-      {filteredTransactions.length === 0 ? (
-        <div className="py-12 text-center text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          Tidak ada transaksi yang cocok dengan filter atau kata kunci.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 text-slate-600 text-xs uppercase bg-slate-50 font-semibold">
-                <th className="py-3 px-3">Waktu / Shift</th>
-                <th className="py-3 px-3">Keterangan</th>
-                <th className="py-3 px-3">Metode</th>
-                <th className="py-3 px-3 text-right">Nominal</th>
-                <th className="py-3 px-3 text-center">Bukti</th>
-                <th className="py-3 px-3 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {filteredTransactions.map((trx) => (
-                <tr key={trx.id} className="hover:bg-slate-50 transition">
-                  <td className="py-3 px-3 whitespace-nowrap">
-                    <div className="font-semibold text-slate-900">
-                      {trx.date} <span className="text-slate-500 text-xs font-normal">({trx.time || '-'})</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                          trx.shift === 'pagi'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {trx.shift === 'pagi' ? 'Pagi' : 'Siang'}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-mono">{trx.id}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3">
-                    <div className="font-medium text-slate-800 flex items-center gap-2">
-                      <span>{trx.title}</span>
-                      {trx.isDuplicate && (
-                        <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
-                          ⚠️ Terindikasi Duplikat
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {trx.category} {trx.referenceId && `• Ref: ${trx.referenceId}`}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded text-xs bg-slate-100 border border-slate-200 text-slate-700 font-bold uppercase">
-                      {trx.paymentMethod || 'Tunai'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right whitespace-nowrap">
-                    <span
-                      className={`font-bold ${
-                        trx.type === 'pemasukan' ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {trx.type === 'pemasukan' ? '+' : '-'} {formatRupiah(trx.amount)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center whitespace-nowrap">
-                    {trx.proofUrl ? (
-                      <button
-                        onClick={() => setSelectedProofModal(trx.proofUrl)}
-                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs transition cursor-pointer font-semibold"
-                      >
-                        🔍 Lihat
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-400">-</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-3 text-center whitespace-nowrap">
-                    <button
-                      onClick={() => onDeleteTransaction(trx.id)}
-                      className="px-2 py-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer text-xs"
-                      title="Hapus transaksi"
-                    >
-                      🗑️
-                    </button>
-                  </td>
+        {filteredTransactions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 py-12 text-center text-sm text-neutral-600">
+            Tidak ada transaksi yang cocok dengan filter atau kata kunci
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-neutral-900/10">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="bg-neutral-50 text-[13px] leading-5 text-neutral-600">
+                  <th className="px-4 py-3 font-medium">Waktu dan shift</th>
+                  <th className="px-4 py-3 font-medium">Keterangan</th>
+                  <th className="px-4 py-3 font-medium">Metode</th>
+                  <th className="px-4 py-3 text-right font-medium">Nominal</th>
+                  <th className="px-4 py-3 text-center font-medium">Bukti</th>
+                  <th className="px-4 py-3 text-center font-medium">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-neutral-900/10">
+                {filteredTransactions.map((trx) => (
+                  <tr key={trx.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="tabular-nums text-neutral-900">
+                        {trx.date} <span className="text-neutral-500">{trx.time || '-'}</span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-3">
+                        <ShiftTag shift={trx.shift} />
+                        <span className="font-mono text-xs text-neutral-500">{trx.id}</span>
+                      </div>
+                    </td>
 
-      {/* MODAL LIHAT STRUK UKURAN PENUH */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 text-neutral-900">
+                        <span>{trx.title}</span>
+                        {trx.isDuplicate && (
+                          <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs leading-4 text-amber-900">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-600" aria-hidden="true" />
+                            Perlu ditinjau
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs leading-4 text-neutral-500">
+                        {trx.category}
+                        {trx.referenceId ? (
+                          <>
+                            {' · Ref '}
+                            <span className="font-mono">{trx.referenceId}</span>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 whitespace-nowrap text-neutral-700">
+                      {methodLabel[trx.paymentMethod || 'tunai'] || trx.paymentMethod}
+                    </td>
+
+                    <td
+                      className={`px-4 py-3 text-right font-medium whitespace-nowrap tabular-nums ${trx.type === 'pemasukan' ? 'text-neutral-900' : 'text-red-600'
+                        }`}
+                    >
+                      {trx.type === 'pemasukan' ? '+' : '−'} {formatRupiah(trx.amount)}
+                    </td>
+
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {trx.proofUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProofModal(trx.proofUrl)}
+                          className={`${btnSecondary} h-8 px-3`}
+                        >
+                          <Eye {...ico} />
+                          Lihat
+                        </button>
+                      ) : (
+                        <span className="text-neutral-500">-</span>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {confirmDeleteId === trx.id ? (
+                        <span className="inline-flex items-center gap-2 text-[13px]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onDeleteTransaction(trx.id);
+                              setConfirmDeleteId(null);
+                            }}
+                            className="cursor-pointer font-medium text-red-600 underline"
+                          >
+                            Hapus
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="cursor-pointer text-neutral-600 underline"
+                          >
+                            Batal
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(trx.id)}
+                          className={iconBtn}
+                          aria-label={`Hapus transaksi ${trx.id}`}
+                        >
+                          <Trash2 {...ico} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal bukti ukuran penuh */}
       {selectedProofModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-4 relative shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <h3 className="text-sm font-semibold text-slate-900">Lampiran Bukti Transaksi</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 p-4"
+          onClick={() => setSelectedProofModal(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Lampiran bukti transaksi"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base leading-6 font-medium text-neutral-900">Bukti transaksi</h3>
               <button
+                type="button"
                 onClick={() => setSelectedProofModal(null)}
-                className="text-slate-400 hover:text-slate-700 px-2 py-1 rounded cursor-pointer"
+                className={iconBtn}
+                aria-label="Tutup"
+                autoFocus
               >
-                ✕
+                <X {...ico} />
               </button>
             </div>
-            <div className="flex justify-center bg-slate-50 border border-slate-100 rounded-lg p-2 overflow-hidden">
-              <img
-                src={selectedProofModal}
-                alt="Bukti Struk Full"
-                className="max-h-[70vh] object-contain rounded"
-              />
-            </div>
-            <div className="mt-3 text-right">
-              <button
-                onClick={() => setSelectedProofModal(null)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
-              >
-                Tutup
-              </button>
+            <div className="flex justify-center rounded-lg border border-neutral-900/10 bg-neutral-50 p-2">
+              <img src={selectedProofModal} alt="Bukti transaksi" className="max-h-[70vh] rounded object-contain" />
             </div>
           </div>
         </div>

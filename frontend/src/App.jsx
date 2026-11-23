@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { History, LayoutDashboard, LogOut, Paperclip, PenLine, ScanText } from 'lucide-react';
 import { INITIAL_MOCK_TRANSACTIONS, formatRupiah } from './data/mockData';
+import { btnGhost, card, ico, motion, Notice } from './lib/ui';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TransactionFormPage from './pages/TransactionFormPage';
@@ -7,248 +9,228 @@ import OcrConfirmationPage from './pages/OcrConfirmationPage';
 import UploadProofPage from './pages/UploadProofPage';
 import HistoryPage from './pages/HistoryPage';
 
+const KEY_USER = 'esbe_mock_user';
+const KEY_TRX = 'esbe_mock_transactions';
+
+// localStorage bisa kosong, rusak, atau penuh (bukti disimpan sebagai base64)
+const readJSON = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+const writeJSON = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// ID berikutnya = angka terbesar + 1. Memakai panjang list menghasilkan ID kembar setelah ada yang dihapus
+const nextId = (list) => {
+  const max = list.reduce((m, t) => {
+    const n = parseInt(String(t.id).replace(/\D/g, ''), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return `TRX-${String(max + 1).padStart(3, '0')}`;
+};
+
+const NAV = [
+  { key: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { key: 'form', label: 'Catat pendapatan', Icon: PenLine },
+  { key: 'ocr', label: 'Konfirmasi OCR', Icon: ScanText },
+  { key: 'upload', label: 'Unggah bukti', Icon: Paperclip },
+  { key: 'history', label: 'Riwayat', Icon: History }
+];
+
+// Formulir tidak dibiarkan melebar selebar tabel
+const PAGE_WIDTH = {
+  dashboard: '',
+  history: '',
+  form: 'max-w-3xl',
+  upload: 'max-w-3xl',
+  ocr: 'max-w-5xl'
+};
+
 export default function App() {
-  // 1. Autentikasi Pengguna (Mockup)
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('esbe_mock_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState(() => readJSON(KEY_USER, null));
+  const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard' | 'form' | 'ocr' | 'upload' | 'history'
+  const [transactions, setTransactions] = useState(() => readJSON(KEY_TRX, INITIAL_MOCK_TRANSACTIONS));
+  const [storageFull, setStorageFull] = useState(false);
 
-  // 2. Navigasi Halaman Aktif ('dashboard' | 'form' | 'ocr' | 'upload' | 'history')
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const persist = (updated) => {
+    setTransactions(updated);
+    setStorageFull(!writeJSON(KEY_TRX, updated));
+  };
 
-  // 3. State Data Transaksi (Tersimpan di localStorage frontend)
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('esbe_mock_transactions');
-    return saved ? JSON.parse(saved) : INITIAL_MOCK_TRANSACTIONS;
-  });
-
-  // Handler Login
   const handleLoginSuccess = (userData) => {
-    localStorage.setItem('esbe_mock_user', JSON.stringify(userData));
+    writeJSON(KEY_USER, userData);
     setCurrentUser(userData);
     setCurrentPage('dashboard');
   };
 
-  // Handler Logout
   const handleLogout = () => {
-    localStorage.removeItem('esbe_mock_user');
+    localStorage.removeItem(KEY_USER);
     setCurrentUser(null);
   };
 
-  // Handler Simpan Transaksi Baru
   const handleSaveTransaction = (newTrxData) => {
-    const newTrx = {
-      id: `TRX-${String(transactions.length + 1).padStart(3, '0')}`,
-      ...newTrxData
-    };
-    const updated = [newTrx, ...transactions];
-    setTransactions(updated);
-    localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
+    persist([{ id: nextId(transactions), ...newTrxData }, ...transactions]);
   };
 
-  // Handler Update / Lampirkan Bukti
   const handleUpdateProof = (trxId, proofUrl) => {
-    const updated = transactions.map((t) =>
-      t.id === trxId ? { ...t, proofUrl } : t
-    );
-    setTransactions(updated);
-    localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
+    persist(transactions.map((t) => (t.id === trxId ? { ...t, proofUrl } : t)));
   };
 
-  // Handler Hapus Transaksi
+  // Konfirmasi hapus dan reset sudah ditangani HistoryPage, jangan dobel dengan confirm()
   const handleDeleteTransaction = (id) => {
-    if (confirm('Yakin ingin menghapus transaksi ini dari riwayat?')) {
-      const updated = transactions.filter((t) => t.id !== id);
-      setTransactions(updated);
-      localStorage.setItem('esbe_mock_transactions', JSON.stringify(updated));
-    }
+    persist(transactions.filter((t) => t.id !== id));
   };
 
-  // Handler Reset Data Contoh
   const handleResetMockData = () => {
-    if (confirm('Kembalikan data ke riwayat contoh awal?')) {
-      setTransactions(INITIAL_MOCK_TRANSACTIONS);
-      localStorage.setItem('esbe_mock_transactions', JSON.stringify(INITIAL_MOCK_TRANSACTIONS));
-    }
+    persist(INITIAL_MOCK_TRANSACTIONS);
   };
 
-  // Ringkasan Keuangan Kas Global
-  const totalPemasukan = transactions
-    .filter((t) => t.type === 'pemasukan')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
-  const totalPengeluaran = transactions
-    .filter((t) => t.type === 'pengeluaran')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-
+  // Ringkasan kas keseluruhan
+  const pemasukan = transactions.filter((t) => t.type === 'pemasukan');
+  const pengeluaran = transactions.filter((t) => t.type === 'pengeluaran');
+  const sum = (list) => list.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const totalPemasukan = sum(pemasukan);
+  const totalPengeluaran = sum(pengeluaran);
   const saldoKas = totalPemasukan - totalPengeluaran;
 
-  // JIKA BELUM LOGIN: TAMPILKAN HALAMAN LOGIN (pages/LoginPage.jsx)
   if (!currentUser) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // JIKA SUDAH LOGIN: TAMPILKAN LAYOUT DENGAN SEMUA HALAMAN LENGKAP
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-      {/* Top Bar Header */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-20 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-sm">
-              ₹
-            </div>
-            <div>
-              <h1 className="font-bold text-base sm:text-lg text-slate-900 leading-tight">
-                Esbe Cash Recap
-              </h1>
-              <p className="text-[10px] text-slate-500 font-medium">
-                UMKM Fotocopy Esbe Lampu Merah
-              </p>
-            </div>
+    <div className="flex min-h-screen flex-col bg-neutral-50 font-sans text-neutral-900">
+      <header className="sticky top-0 z-20 border-b border-neutral-900/10 bg-white">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 sm:px-8">
+          <div>
+            <h1 className="text-lg leading-6 font-medium">Esbe Cash Recap</h1>
+            <p className="text-xs leading-4 text-neutral-500">Fotocopy Esbe Lampu Merah</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs text-slate-600">
-              Masuk: <strong className="text-indigo-700 font-semibold">{currentUser.name}</strong> ({currentUser.role})
+          <div className="flex items-center gap-2">
+            <span className="hidden text-[13px] leading-5 text-neutral-600 sm:inline">
+              {currentUser.name} · {currentUser.role}
             </span>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold rounded-lg transition cursor-pointer"
-            >
+            <button type="button" onClick={handleLogout} className={btnGhost}>
+              <LogOut {...ico} />
               Keluar
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-1 space-y-6">
-        {/* Ringkasan Saldo Global */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Total Saldo Kas Berjalan
-            </span>
-            <div className={`text-2xl font-bold mt-1 ${saldoKas >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+      <main className="mx-auto w-full max-w-[1440px] flex-1 space-y-6 px-6 py-6 sm:px-8">
+        {storageFull && (
+          <Notice kind="warning">
+            Penyimpanan browser penuh, perubahan terakhir tidak tersimpan permanen. Hapus transaksi dengan bukti
+            foto yang tidak diperlukan
+          </Notice>
+        )}
+
+        {/* Ringkasan kas keseluruhan */}
+        <section aria-label="Ringkasan kas keseluruhan" className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-[1.5fr_1fr_1fr]">
+          <div className={`${card} p-5`}>
+            <p className="text-[13px] leading-5 text-neutral-600">Saldo kas</p>
+            <p
+              className={`mt-2 text-[28px] leading-8 font-medium tabular-nums ${saldoKas >= 0 ? 'text-neutral-900' : 'text-red-600'
+                }`}
+            >
               {formatRupiah(saldoKas)}
-            </div>
+            </p>
+            <p className="mt-1 text-xs leading-4 text-neutral-500">Semua tanggal dan shift</p>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-              Total Pemasukan Toko
-            </span>
-            <div className="text-2xl font-bold mt-1 text-emerald-600">
-              +{formatRupiah(totalPemasukan)}
-            </div>
+
+          <div className={`${card} p-5`}>
+            <p className="text-[13px] leading-5 text-neutral-600">Total pemasukan</p>
+            <p className="mt-2 text-[28px] leading-8 font-medium tabular-nums text-neutral-900">
+              {formatRupiah(totalPemasukan)}
+            </p>
+            <p className="mt-1 text-xs leading-4 text-neutral-500">{pemasukan.length} transaksi</p>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-            <span className="text-xs font-semibold text-rose-600 uppercase tracking-wider">
-              Total Pengeluaran Kas
-            </span>
-            <div className="text-2xl font-bold mt-1 text-rose-600">
-              -{formatRupiah(totalPengeluaran)}
-            </div>
+
+          <div className={`${card} p-5`}>
+            <p className="text-[13px] leading-5 text-neutral-600">Total pengeluaran</p>
+            <p className="mt-2 text-[28px] leading-8 font-medium tabular-nums text-red-600">
+              {formatRupiah(totalPengeluaran)}
+            </p>
+            <p className="mt-1 text-xs leading-4 text-neutral-500">{pengeluaran.length} transaksi</p>
           </div>
         </section>
 
-        {/* Tab Navigasi Antar Halaman (Lengkap Sesuai Project Plan) */}
-        <div className="flex border-b border-slate-200 space-x-1 sm:space-x-3 overflow-x-auto pb-0.5">
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              currentPage === 'dashboard'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📊</span> Dashboard Rekap (Pemilik)
-          </button>
-          <button
-            onClick={() => setCurrentPage('form')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              currentPage === 'form'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📝</span> Catat Pendapatan
-          </button>
-          <button
-            onClick={() => setCurrentPage('ocr')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              currentPage === 'ocr'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>🔍</span> Konfirmasi OCR & Duplikat
-          </button>
-          <button
-            onClick={() => setCurrentPage('upload')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              currentPage === 'upload'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📎</span> Unggah Bukti
-          </button>
-          <button
-            onClick={() => setCurrentPage('history')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              currentPage === 'history'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📋</span> Riwayat Transaksi
-            <span className="text-[11px] px-2 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-200">
-              {transactions.length}
-            </span>
-          </button>
+        {/* Navigasi halaman */}
+        <nav aria-label="Halaman utama" className="flex gap-2 overflow-x-auto border-b border-neutral-900/10">
+          {NAV.map(({ key, label, Icon }) => {
+            const active = currentPage === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCurrentPage(key)}
+                aria-current={active ? 'page' : undefined}
+                className={`-mb-px inline-flex h-10 cursor-pointer items-center gap-2 border-b-2 px-3 text-sm font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-800 ${motion} ${active
+                    ? 'border-blue-800 text-neutral-900'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                  }`}
+              >
+                <Icon {...ico} />
+                {label}
+                {key === 'history' && (
+                  <span className="font-mono text-xs font-normal tabular-nums text-neutral-500">
+                    {transactions.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className={PAGE_WIDTH[currentPage]}>
+          {currentPage === 'dashboard' && <DashboardPage transactions={transactions} />}
+
+          {currentPage === 'form' && (
+            <TransactionFormPage
+              onSaveTransaction={handleSaveTransaction}
+              onNavigateToHistory={() => setCurrentPage('history')}
+              onNavigateToOcr={() => setCurrentPage('ocr')}
+            />
+          )}
+
+          {currentPage === 'ocr' && (
+            <OcrConfirmationPage
+              onConfirmTransaction={(data) => {
+                handleSaveTransaction(data);
+                setCurrentPage('history');
+              }}
+              onCancel={() => setCurrentPage('form')}
+            />
+          )}
+
+          {currentPage === 'upload' && (
+            <UploadProofPage
+              transactions={transactions}
+              onUpdateProof={handleUpdateProof}
+              onNavigateToHistory={() => setCurrentPage('history')}
+            />
+          )}
+
+          {currentPage === 'history' && (
+            <HistoryPage
+              transactions={transactions}
+              onDeleteTransaction={handleDeleteTransaction}
+              onResetMockData={handleResetMockData}
+              onNavigateToForm={() => setCurrentPage('form')}
+            />
+          )}
         </div>
-
-        {/* RENDER HALAMAN SESUAI TAB YANG AKTIF */}
-        {currentPage === 'dashboard' && (
-          <DashboardPage transactions={transactions} />
-        )}
-
-        {currentPage === 'form' && (
-          <TransactionFormPage
-            onSaveTransaction={handleSaveTransaction}
-            onNavigateToHistory={() => setCurrentPage('history')}
-            onNavigateToOcr={() => setCurrentPage('ocr')}
-          />
-        )}
-
-        {currentPage === 'ocr' && (
-          <OcrConfirmationPage
-            onConfirmTransaction={(data) => {
-              handleSaveTransaction(data);
-              setCurrentPage('history');
-            }}
-            onCancel={() => setCurrentPage('form')}
-          />
-        )}
-
-        {currentPage === 'upload' && (
-          <UploadProofPage
-            transactions={transactions}
-            onUpdateProof={handleUpdateProof}
-            onNavigateToHistory={() => setCurrentPage('history')}
-          />
-        )}
-
-        {currentPage === 'history' && (
-          <HistoryPage
-            transactions={transactions}
-            onDeleteTransaction={handleDeleteTransaction}
-            onResetMockData={handleResetMockData}
-            onNavigateToForm={() => setCurrentPage('form')}
-          />
-        )}
       </main>
     </div>
   );
