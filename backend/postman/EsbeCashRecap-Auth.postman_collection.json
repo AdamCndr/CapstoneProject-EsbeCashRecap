@@ -1,0 +1,353 @@
+{
+  "info": {
+    "_postman_id": "e6a41b2c-9c74-4a30-9f5b-6e8b9a10c111",
+    "name": "EsbeCashRecap - Auth & RBAC",
+    "description": "Koleksi request Postman untuk menguji autentikasi JWT, validasi Joi, akun non-aktif, RBAC requireRole('owner'), dan rate limiter pada backend EsbeCashRecap.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "ownerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login Benar (Owner)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 200 OK', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Mengembalikan accessToken dan data user owner', () => {",
+              "  pm.expect(json.data.accessToken).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.data.user.username).to.eql('owner');",
+              "  pm.expect(json.data.user.role).to.eql('owner');",
+              "});",
+              "pm.collectionVariables.set('ownerToken', json.data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"owner\",\n  \"password\": \"owner123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Login Benar (Employee)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 200 OK', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Mengembalikan accessToken dan data user employee', () => {",
+              "  pm.expect(json.data.accessToken).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.data.user.username).to.eql('employee');",
+              "  pm.expect(json.data.user.role).to.eql('employee');",
+              "});",
+              "pm.collectionVariables.set('employeeToken', json.data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"employee\",\n  \"password\": \"employee123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Get Me (Data User dari Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 200 OK', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Data user sesuai payload JWT', () => {",
+              "  pm.expect(json.data.user).to.have.keys('id', 'username', 'role');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Login Kredensial Salah (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 401 Unauthorized', () => pm.response.to.have.status(401));",
+              "const json = pm.response.json();",
+              "pm.test('Pesan generik dan format error standar', () => {",
+              "  pm.expect(json.error.code).to.eql('INVALID_CREDENTIALS');",
+              "  pm.expect(json.error.message).to.eql('Username atau password salah');",
+              "  pm.expect(json.error).to.have.property('details');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"owner\",\n  \"password\": \"password_salah\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Login Input Kosong (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 400 Bad Request', () => pm.response.to.have.status(400));",
+              "const json = pm.response.json();",
+              "pm.test('Validasi Joi mengembalikan pesan jelas', () => {",
+              "  pm.expect(json.error.code).to.eql('VALIDATION_ERROR');",
+              "  pm.expect(json.error.details.fields).to.be.an('array').with.lengthOf(2);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Login Akun Non-Aktif (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 403 Forbidden', () => pm.response.to.have.status(403));",
+              "const json = pm.response.json();",
+              "pm.test('Mengembalikan ACCOUNT_INACTIVE', () => {",
+              "  pm.expect(json.error.code).to.eql('ACCOUNT_INACTIVE');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"nonaktif\",\n  \"password\": \"nonaktif123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Akses Endpoint Owner oleh Employee (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 403 Forbidden', () => pm.response.to.have.status(403));",
+              "const json = pm.response.json();",
+              "pm.test('Employee ditolak oleh requireRole(owner)', () => {",
+              "  pm.expect(json.error.code).to.eql('FORBIDDEN');",
+              "  pm.expect(json.error.details.currentRole).to.eql('employee');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{employeeToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/owner-only",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "owner-only"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Akses Endpoint Owner oleh Owner (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code 200 OK', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Owner diizinkan mengakses endpoint', () => {",
+              "  pm.expect(json.data.user.role).to.eql('owner');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/owner-only",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "owner-only"
+          ]
+        }
+      }
+    }
+  ]
+}
