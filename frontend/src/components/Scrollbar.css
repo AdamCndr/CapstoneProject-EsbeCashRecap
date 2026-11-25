@@ -1,0 +1,127 @@
+/* ==========================================================================
+   ESBE CASH RECAP - SCROLLBAR (garis, auto-hide)
+   Lokasi: frontend/src/components/Scrollbar.css
+
+   Scrollbar native disembunyikan (hanya saat <Scrollbar /> ter-mount, lewat
+   atribut html[data-custom-scrollbar]). Garis digambar & digerakkan oleh
+   Scrollbar.jsx. Semua kurva tanpa overshoot.
+   ========================================================================== */
+
+:root {
+  --sb-line: var(--royal-600);
+  --sb-line-active: var(--royal-800);
+  --sb-glow: color-mix(in srgb, var(--royal-600) 40%, transparent);
+
+  --sb-w: 3px;
+  /* tebal normal */
+  --sb-w-hover: 6px;
+  /* tebal saat hover / drag */
+  --sb-hit: 20px;
+  /* area klik (transparan) */
+  --sb-edge: 6px;
+  /* jarak garis dari tepi layar */
+
+  --sb-in: 200ms;
+  --sb-out: 400ms;
+  --sb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sb-line: var(--royal-400);
+    --sb-line-active: var(--royal-300);
+    --sb-glow: color-mix(in srgb, var(--royal-400) 50%, transparent);
+  }
+}
+
+/* Sembunyikan scrollbar native (fungsi scroll tetap jalan) */
+html[data-custom-scrollbar],
+html[data-custom-scrollbar] * {
+  scrollbar-width: none;
+}
+
+html[data-custom-scrollbar]::-webkit-scrollbar,
+html[data-custom-scrollbar] *::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   Garis
+   Pembungkus = area klik; top/bottom/right/transition diatur oleh JS
+   (efek memanjang). Garis di dalamnya yang tampak.
+   ========================================================================== */
+.esbe-sb {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 2147483000;
+  width: var(--sb-hit);
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  will-change: transform, height;
+}
+
+.esbe-sb[data-visible] {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.esbe-sb[data-dragging] {
+  cursor: grabbing;
+}
+
+.esbe-sb__line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--sb-edge);
+  width: var(--sb-w);
+  border-radius: 999px;
+  background: var(--sb-line);
+  opacity: 0;
+  transform: scaleX(0.7);
+  transform-origin: right center;
+  box-shadow: 0 0 0 transparent;
+  transition:
+    opacity var(--sb-out) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--sb-out) var(--sb-ease),
+    width var(--sb-out) var(--sb-ease),
+    box-shadow var(--sb-out) var(--sb-ease),
+    background-color 200ms var(--sb-ease);
+}
+
+/* Muncul: fade in + scale halus tanpa patah-patah */
+.esbe-sb[data-visible] .esbe-sb__line {
+  opacity: 1;
+  transform: scaleX(1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16), 0 0 10px var(--sb-glow);
+  transition-duration: var(--sb-in);
+}
+
+/* Hover / drag: menebal halus */
+.esbe-sb[data-visible]:hover .esbe-sb__line,
+.esbe-sb[data-dragging] .esbe-sb__line {
+  width: var(--sb-w-hover);
+  opacity: 1;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 14px var(--sb-glow);
+}
+
+.esbe-sb[data-dragging] .esbe-sb__line {
+  background: var(--sb-line-active);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .esbe-sb,
+  .esbe-sb__line {
+    transition: none !important;
+  }
+}
+
+/* Layar sentuh: pakai scrollbar bawaan OS */
+@media (hover: none) and (pointer: coarse) {
+  .esbe-sb {
+    display: none;
+  }
+}

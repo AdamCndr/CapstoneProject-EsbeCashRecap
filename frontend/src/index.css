@@ -1,22 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
     color-scheme: light;
     -webkit-font-smoothing: antialiased;
+    scroll-padding-top: 100px;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    background: var(--surface-app);
+}
+
+/* Aksen glow tipis yang mengikuti mouse. CSS variable diisi oleh
+   hooks/useMouseGlow.js atau hooks/useTiltSurface.js. */
+.mouse-glow {
+    background-image: radial-gradient(
+        circle var(--glow-size, 80px) at var(--glow-x, 50%) var(--glow-y, 50%),
+        color-mix(in srgb, var(--text-inverse) calc(var(--glow-opacity, 0) * 100%), transparent) 0%,
+        transparent 72%
+    );
+}
+
+/* Versi hero: area lebih luas dan lebih terang supaya jelas terlihat. */
+.hero-glow {
+    background-image: radial-gradient(
+        circle var(--glow-size, 420px) at var(--glow-x, 50%) var(--glow-y, 50%),
+        color-mix(in srgb, var(--text-inverse) calc(var(--glow-opacity, 0) * 100%), transparent) 0%,
+        color-mix(in srgb, var(--text-inverse) calc(var(--glow-opacity, 0) * 100%), transparent) 28%,
+        transparent 78%
+    );
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-    *,
-    ::before,
-    ::after {
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
+    html {
+        scroll-behavior: auto;
     }
 }
