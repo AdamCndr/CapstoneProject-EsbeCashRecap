@@ -1,0 +1,125 @@
+/* ==========================================================================
+   SAMBUTAN SETELAH LOGIN — fullscreen, selaras dengan tema DashboardPage
+   Grad-hero royal blueprint, teks putih / royal-100,
+   easing cubic-bezier(0.22, 1, 0.36, 1) + cross-fade mulus ke aplikasi.
+   ========================================================================== */
+
+:root {
+  --welcome-ease: var(--ease-out);
+}
+
+/* Aplikasi utama ikut "bangkit" saat overlay mulai memudar */
+.app-shell {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms ease-out,
+    transform 700ms var(--welcome-ease);
+}
+
+.app-shell.is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Selama sambutan, halaman di bawah tidak boleh scroll/bersisa gutter */
+body.welcome-open {
+  overflow: hidden;
+}
+
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* adaptif terhadap browser chrome di mobile */
+  padding: 24px;
+  color: var(--text-inverse);
+  /* Background di-position ke viewport dan di-cover, tanpa celah di ukuran apa pun */
+  background: var(--grad-hero) center / cover no-repeat fixed;
+  will-change: opacity, transform, filter;
+  /* "backwards" sengaja dipakai agar transition saat keluar tidak ditimpa fill-mode */
+  animation: welcome-in 700ms var(--welcome-ease) backwards;
+  transition:
+    opacity 700ms ease-out,
+    transform 700ms var(--welcome-ease),
+    filter 700ms ease-out;
+}
+
+@keyframes welcome-in {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+    filter: blur(8px);
+  }
+}
+
+.welcome-overlay.is-leaving {
+  animation: none;
+  opacity: 0;
+  transform: scale(1.05);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* Lingkaran dekoratif white/10, sama seperti di hero dashboard */
+.welcome-decor {
+  position: absolute;
+  left: -18vw;
+  bottom: -30vh;
+  width: min(86vw, 680px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--glass-decor);
+  pointer-events: none;
+}
+
+/* Dua baris teks: Welcome + nama lengkap */
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.welcome-title {
+  margin: 0;
+  color: var(--text-inverse);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  animation: welcome-rise 700ms var(--welcome-ease) 150ms both;
+}
+
+.welcome-name {
+  margin: 14px 0 0;
+  color: var(--royal-100);
+  font-size: clamp(1.15rem, 3.6vw, 1.6rem);
+  font-weight: 500;
+  line-height: 1.4;
+  animation: welcome-rise 700ms var(--welcome-ease) 220ms both;
+}
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* Aksesibilitas: pengguna memilih reduced motion -> tetap cepat tanpa jeda */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-overlay,
+  .welcome-overlay *,
+  .app-shell {
+    animation-delay: 0s !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

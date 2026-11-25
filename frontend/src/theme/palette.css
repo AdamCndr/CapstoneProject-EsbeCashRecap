@@ -1,0 +1,88 @@
+/* ==========================================================================
+   ESBE CASH RECAP - DESIGN TOKENS & PALET WARNA (ROYAL BLUEPRINT & AMBER)
+   File: frontend/src/theme/palette.css
+   
+   Karakteristik:
+   - Nuansa percetakan & blueprint tepercaya (mirip identitas Canon, HP, Xerox, Epson).
+   - Memenuhi standar aksesibilitas WCAG 2.1 (rasio kontras teks minimal 4.5:1).
+   - Anda dapat langsung mengedit kode HEX di bawah ini untuk kustomisasi mandiri.
+   ========================================================================== */
+
+:root {
+  /* ========================================================================
+     1. WARNA UTAMA: ROYAL BLUEPRINT (Brand & Navigasi Utama)
+     ======================================================================== */
+  --royal-50:  #EFF6FF; /* Biru sangat terang (latar hover / active pill lembut) */
+  --royal-100: #DBEAFE; /* Biru es (border lembut / badge latar) */
+  --royal-200: #BFDBFE; /* Garis batas / border fokus */
+  --royal-300: #93C5FD; /* Aksen sekunder */
+  --royal-400: #60A5FA; /* Biru cerah */
+  --royal-500: #3B82F6; /* Biru royal terang */
+  --royal-600: #2563EB; /* Biru royal standar (tombol interaktif) */
+  --royal-700: #1D4ED8; /* WARNA UTAMA BRAND (Header, Sidebar aktif, Hero) */
+  --royal-800: #1E40AF; /* Biru blueprint tua (Hover tombol & gradien gelap) */
+  --royal-900: #1E3A8A; /* Biru navy pekat (Ujung gradien hero) */
+
+  /* ========================================================================
+     2. WARNA AKSEN: AMBER / WARM GOLD (Shift, Highlight & Operasional)
+     ======================================================================== */
+  --amber-50:  #FFFBEB; /* Latar badge amber */
+  --amber-100: #FEF3C7; /* Border chip amber */
+  --amber-400: #FBBF24; /* Emas cerah (ikon / bintang) */
+  --amber-500: #F59E0B; /* Amber standar (Titik Shift Pagi & Warning) */
+  --amber-600: #D97706; /* Amber gelap (Teks amber agar kontras >= 4.5:1) */
+  --amber-700: #B45309; /* Amber pekat */
+
+  /* ========================================================================
+     3. WARNA LATAR & PERMUKAAN (Paper & Clean Slate)
+     ======================================================================== */
+  --surface-app:       #F8FAFC; /* Latar belakang aplikasi (kertas abu sejuk) */
+  --surface-card:      #FFFFFF; /* Latar kartu utama (putih bersih) */
+  --surface-muted:     #F1F5F9; /* Latar input & wadah sekunder */
+  --surface-hover:     #E2E8F0; /* Latar saat elemen disorot / hover */
+
+  /* ========================================================================
+     4. WARNA GARIS BATAS / BORDER
+     ======================================================================== */
+  --border-subtle:     #F1F5F9; /* Garis pemisah tipis */
+  --border-default:    #E2E8F0; /* Border kartu & input standar */
+  --border-strong:     #CBD5E1; /* Border fokus / pemisah tegas */
+
+  /* ========================================================================
+     5. TIPOGRAFI & WARNA TEKS (Memenuhi Kontras WCAG AAA/AA)
+     ======================================================================== */
+  --text-main:         #0F172A; /* Teks utama / judul (Slate Ink pekat, kontras 15.8:1) */
+  --text-muted:        #64748B; /* Teks sekunder di atas putih (Slate Muted, kontras 4.6:1) */
+  --text-muted-alt:    #475569; /* Teks sekunder di atas --surface-muted (kontras 6.2:1) */
+  --text-inverse:      #FFFFFF; /* Teks putih di atas latar gelap */
+  --text-link:         #1D4ED8; /* Teks tautan biru */
+
+  /* ========================================================================
+     6. STATUS OPERASIONAL KASIR & ARUS KAS
+     ======================================================================== */
+  --cash-in:           #047857; /* Pemasukan Kas (Emerald 700, kontras 5.48:1 di putih) */
+  --cash-in-light:     #ECFDF5; /* Latar badge pemasukan */
+  --cash-out:          #DC2626; /* Pengeluaran Kas (Red 600, kontras 4.83:1 di putih) */
+  --cash-out-light:    #FEF2F2; /* Latar badge pengeluaran */
+  
+  --shift-pagi:        #F59E0B; /* Shift Pagi (08:00 - 14:00, Amber) */
+  --shift-siang:       #2563EB; /* Shift Siang (14:00 - 21:00, Royal Blue) */
+
+  /* ========================================================================
+     7. PRESET GRADIEN KHUSUS (HERO & HEADER NOTCH)
+     ======================================================================== */
+  /* Gradien utama banner hero kasir */
+  --grad-hero: linear-gradient(125deg, #1E3A8A 0%, #1D4ED8 60%, #2563EB 100%);
+  
+  /* Gradien sayap header notch */
+  --grad-wing: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%);
+
+  /* Gradien tombol aksi utama */
+  --grad-btn-primary: linear-gradient(125deg, #1D4ED8 0%, #2563EB 100%);
+
+  /* Bayangan elevasi bernuansa biru blueprint */
+  --shadow-royal-hero: 0 16px 36px -14px rgba(29, 78, 216, 0.42);
+  --shadow-royal-card: 0 4px 20px rgba(15, 23, 42, 0.05);
+  --shadow-royal-btn:  0 8px 20px -6px rgba(29, 78, 216, 0.45);
+}
+

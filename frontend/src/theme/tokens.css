@@ -1,0 +1,62 @@
+/* ==========================================================================
+   ALIAS TOKEN — turunan dari theme/palette.css (file palet tidak diubah).
+   Semua nilai di sini hanya memakai variabel palet + color-mix, tanpa hex/rgb baru.
+   ========================================================================== */
+
+:root {
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-toggle: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Warna semantik tambahan */
+  --chart-transfer: var(--royal-500); /* alias warna transfer lama sesuai keputusan */
+
+  /* Permukaan kaca pada latar gelap (semua berasal dari --text-inverse) */
+  --glass-decor: color-mix(in srgb, var(--text-inverse) 10%, transparent);
+  --glass-subtle: color-mix(in srgb, var(--text-inverse) 12%, transparent);
+  --glass-strong: color-mix(in srgb, var(--text-inverse) 14%, transparent);
+  --glass-border: color-mix(in srgb, var(--text-inverse) 22%, transparent);
+  --glass-faint: color-mix(in srgb, var(--text-inverse) 8%, transparent);
+  --glass-line: color-mix(in srgb, var(--text-inverse) 15%, transparent);
+  --glass-hairline: color-mix(in srgb, var(--text-inverse) 18%, transparent);
+  --glass-hover: color-mix(in srgb, var(--text-inverse) 20%, transparent);
+  --glass-ring: color-mix(in srgb, var(--text-inverse) 30%, transparent);
+  --glass-active: color-mix(in srgb, var(--text-inverse) 35%, transparent);
+  --glass-text-dim: color-mix(in srgb, var(--text-inverse) 50%, transparent);
+  --glass-text-muted: color-mix(in srgb, var(--text-inverse) 60%, transparent);
+  --glass-text-soft: color-mix(in srgb, var(--text-inverse) 85%, transparent);
+  --ring-on-dark: color-mix(in srgb, var(--text-inverse) 70%, transparent);
+  --overlay-scrim: color-mix(in srgb, var(--text-main) 50%, transparent);
+
+  /* Elevasi & inset (semua berasal dari token palet) */
+  --shadow-inset-hero: inset 0 2px 5px color-mix(in srgb, var(--text-main) 18%, transparent);
+  --shadow-inset-hero-hover:
+    inset 0 2px 5px color-mix(in srgb, var(--text-main) 18%, transparent),
+    0 10px 22px color-mix(in srgb, var(--text-main) 22%, transparent);
+  --shadow-popover-lg: 0 24px 56px color-mix(in srgb, var(--text-main) 24%, transparent);
+  --shadow-popover-md: 0 16px 40px color-mix(in srgb, var(--text-main) 18%, transparent);
+  --shadow-indicator: 0 4px 12px color-mix(in srgb, var(--royal-600) 35%, transparent);
+  --shadow-search-hover: 0 6px 16px color-mix(in srgb, var(--text-main) 8%, transparent);
+  --shadow-search-focus: 0 8px 20px color-mix(in srgb, var(--text-main) 10%, transparent);
+  --shadow-tooltip: 0 6px 16px color-mix(in srgb, var(--text-main) 12%, transparent);
+  --shadow-glass-card: 0 8px 32px color-mix(in srgb, var(--text-main) 14%, transparent);
+
+  /* Elevasi header notch, dropdown, dan sidebar (turunan palet) */
+  --shadow-header-notch:
+    0 8px 24px -6px color-mix(in srgb, var(--royal-700) 16%, transparent),
+    0 2px 6px color-mix(in srgb, var(--royal-900) 6%, transparent);
+  --shadow-header-dark:
+    drop-shadow(0 10px 18px color-mix(in srgb, var(--royal-900) 28%, transparent))
+    drop-shadow(0 3px 8px color-mix(in srgb, var(--text-main) 22%, transparent));
+  --shadow-header-light:
+    drop-shadow(0 10px 18px color-mix(in srgb, var(--royal-700) 14%, transparent))
+    drop-shadow(0 3px 8px color-mix(in srgb, var(--text-main) 16%, transparent));
+  --shadow-menu-dark: 0 20px 44px -14px color-mix(in srgb, var(--text-main) 65%, transparent);
+  --shadow-menu-light:
+    0 20px 44px -16px color-mix(in srgb, var(--royal-700) 30%, transparent),
+    0 4px 12px -4px color-mix(in srgb, var(--text-main) 12%, transparent);
+  --shadow-sidebar-mobile: 0 20px 40px -12px color-mix(in srgb, var(--royal-900) 50%, transparent);
+  --shadow-sidebar-desktop: 8px 0 24px -4px color-mix(in srgb, var(--royal-800) 35%, transparent);
+  --shadow-nav-indicator: 0 0 8px color-mix(in srgb, var(--text-inverse) 60%, transparent);
+}
