@@ -9,14 +9,17 @@ import AuthService from './services/AuthService.js';
 import TransactionService from './services/TransactionService.js';
 import RecapService from './services/RecapService.js';
 import DashboardService from './services/DashboardService.js';
+import UsersService from './services/UsersService.js';
 import TokenManager from './tokenize/TokenManager.js';
 import AuthValidator from './validator/auth/index.js';
 import TransactionsValidator from './validator/transactions/index.js';
 import RecapValidator from './validator/recap/index.js';
+import UsersValidator from './validator/users/index.js';
 import authPlugin from './api/auth/index.js';
 import transactionsPlugin from './api/transactions/index.js';
 import recapPlugin from './api/recap/index.js';
 import dashboardPlugin from './api/dashboard/index.js';
+import usersPlugin from './api/users/index.js';
 
 /**
  * Membuat payload error terstandar sesuai spesifikasi API.
@@ -90,10 +93,12 @@ export async function createServer({
   transactionService = new TransactionService(),
   recapService = new RecapService(),
   dashboardService = new DashboardService(),
+  usersService = new UsersService(),
   tokenManager = TokenManager,
   authValidator = AuthValidator,
   transactionsValidator = TransactionsValidator,
   recapValidator = RecapValidator,
+  usersValidator = UsersValidator,
   rateLimiterOptions = {
     windowMs: config.rateLimit.loginWindowMs,
     maxAttempts: config.rateLimit.loginMaxAttempts,
@@ -175,6 +180,13 @@ export async function createServer({
       options: {
         service: dashboardService,
         validator: recapValidator,
+      },
+    },
+    {
+      plugin: usersPlugin,
+      options: {
+        service: usersService,
+        validator: usersValidator,
       },
     },
   ]);

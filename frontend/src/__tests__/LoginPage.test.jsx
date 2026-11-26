@@ -114,12 +114,15 @@ describe('LoginPage: login gagal', () => {
 
   it('menampilkan pesan error dari response backend (401)', async () => {
     mockLogin.mockRejectedValueOnce({
-      response: { status: 401, data: { message: 'Username atau password salah' } },
+      response: {
+        status: 401,
+        data: { error: { code: 'INVALID_CREDENTIALS', message: 'Username atau password salah', details: {} } },
+      },
     });
 
     renderLogin();
 
-    await userEvent.type(screen.getByLabelText(/username/i), 'adam');
+    await userEvent.type(screen.getByLabelText(/username/i), 'employee');
     await userEvent.type(screen.getByLabelText(/password/i), 'wrong');
     fireEvent.submit(screen.getByRole('button', { name: /masuk/i }).closest('form'));
 

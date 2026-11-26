@@ -139,7 +139,10 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
         setDetectedUser(userData); // panel shift muncul di samping
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Gagal login. Periksa koneksi backend atau kredensial Anda.';
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        'Gagal login. Periksa koneksi backend atau kredensial Anda.';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -236,7 +239,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                             setUsername(e.target.value);
                             setDetectedUser(null);
                           }}
-                          placeholder="owner atau kasir"
+                          placeholder="owner atau employee"
                           className={`${field} pl-9`}
                         />
                       </div>
@@ -281,8 +284,8 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                     <span className="text-xs text-[var(--text-muted)]">Akun contoh:</span>
                     <button
                       type="button"
-                      onClick={() => handleQuickFill('owner', '123456')}
-                      aria-label="Isi cepat akun Pemilik: owner / 123456"
+                      onClick={() => handleQuickFill('owner', 'owner123')}
+                      aria-label="Isi cepat akun Pemilik: owner / owner123"
                       className={chipClass}
                     >
                       <ShieldCheck size={13} className="text-[var(--royal-700)]" aria-hidden="true" />
@@ -290,12 +293,12 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleQuickFill('kasir', '123456')}
-                      aria-label="Isi cepat akun Karyawan: kasir / 123456"
+                      onClick={() => handleQuickFill('employee', 'employee123')}
+                      aria-label="Isi cepat akun Karyawan: employee / employee123"
                       className={chipClass}
                     >
                       <User size={13} className="text-[var(--amber-600)]" aria-hidden="true" />
-                      kasir
+                      employee
                     </button>
                   </div>
                 </div>
