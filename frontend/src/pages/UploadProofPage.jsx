@@ -8,6 +8,7 @@ import { useSmoothResize } from '../hooks/useSmoothResize';
 import ColumnFilterSelect from '../components/ui/ColumnFilterSelect';
 import EmptyNote from '../components/ui/EmptyNote';
 import { btnPrimary, ico, label, Notice } from '../lib/ui';
+import { extractTransactionProofRequest } from '../services/api';
 
 // ── Animasi masuk halaman (sama dengan Dashboard: EASE_OUT + stagger) ─────────
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -100,7 +101,9 @@ function CardHeader({ title, hint, right }) {
 
 export default function UploadProofPage({ transactions, onUpdateProof, onNavigateToHistory, initialTransactionId }) {
   const [selectedId, setSelectedId] = useState(initialTransactionId || transactions[0]?.id || '');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [proofPreview, setProofPreview] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [previewShown, setPreviewShown] = useState(false);
   const [dragging, setDragging] = useState(false);
   const {
@@ -201,6 +204,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
       return;
     }
 
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setProofPreview(reader.result);
@@ -217,20 +221,32 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
     processFile(e.dataTransfer.files?.[0]);
   };
 
-  const handleSaveProof = (e) => {
+  const handleSaveProof = async (e) => {
     e.preventDefault();
+    if (isUploading) return;
     if (!selectedTrxId) {
       showFeedback({ type: 'error', message: 'Pilih transaksi terlebih dahulu' });
       return;
     }
-    if (!proofPreview) {
+    if (!proofPreview || !selectedFile) {
       showFeedback({ type: 'error', message: 'Pilih file gambar bukti' });
       return;
     }
 
-    onUpdateProof(selectedTrxId, proofPreview);
-    showFeedback({ type: 'success', message: `Bukti terlampir pada transaksi ${selectedTrxId}` });
-    setProofPreview('');
+    setIsUploading(true);
+    try {
+      const res = await extractTransactionProofRequest(selectedFile);
+      onUpdateProof(selectedTrxId, proofPreview);
+      const extractMsg = res?.message ? ` — ${res.message}` : '';
+      showFeedback({ type: 'success', message: `Bukti terlampir pada transaksi ${selectedTrxId}${extractMsg}` });
+      setProofPreview('');
+      setSelectedFile(null);
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Gagal mengunggah dan mengekstrak bukti transaksi';
+      showFeedback({ type: 'error', message: msg });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const trxOptions = transactions.map((trx) => ({

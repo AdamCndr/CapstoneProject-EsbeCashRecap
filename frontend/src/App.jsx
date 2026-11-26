@@ -13,6 +13,7 @@ import UploadProofPage from './pages/UploadProofPage';
 import HistoryPage from './pages/HistoryPage';
 import UserManagementPage from './pages/UserManagementPage';
 import { btnPrimary, card } from './lib/ui';
+import { getMeRequest, getStoredToken, setStoredToken } from './services/api';
 
 export default function App() {
   // 1. Autentikasi Pengguna (Tersimpan di localStorage agar tidak kembali ke login saat reload)
@@ -93,8 +94,32 @@ export default function App() {
     }
   };
 
+  // Verifikasi sesi JWT saat aplikasi dimuat jika token tersimpan
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token || !currentUser) return;
+    let cancelled = false;
+    getMeRequest()
+      .then((res) => {
+        if (cancelled || !res?.data?.user) return;
+        const { id, username, role } = res.data.user;
+        const mappedRole = role === 'owner' ? 'Pemilik' : 'Karyawan';
+        setCurrentUser((prev) => (prev ? { ...prev, id, username, role: mappedRole } : prev));
+      })
+      .catch((err) => {
+        if (!cancelled && err?.response?.status === 401) {
+          setStoredToken(null);
+          setCurrentUser(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Handler Logout
   const handleLogout = () => {
+    setStoredToken(null);
     setCurrentUser(null);
     setCurrentPage('form');
     setSearchQuery('');
