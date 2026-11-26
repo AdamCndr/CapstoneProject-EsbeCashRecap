@@ -130,7 +130,7 @@ export async function createServer({
       maxAgeSec: config.jwt.expireMinutes * 60,
     },
     validate: (artifacts) => {
-      const { id, username, role } = artifacts.decoded.payload || {};
+      const { id, username, role, full_name } = artifacts.decoded.payload || {};
 
       if (!id || !username || !role) {
         return { isValid: false };
@@ -141,6 +141,7 @@ export async function createServer({
         credentials: {
           id,
           username,
+          full_name: full_name || null,
           role,
         },
       };

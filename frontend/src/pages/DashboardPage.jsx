@@ -412,8 +412,8 @@ function DateField({ value, onChange }) {
 
 // ── Filter shift: indikator geser mulus antar pilihan ────────────────────────
 const SHIFT_OPTIONS = [
-  ['semua', 'Semua', '08:00–21:00'],
-  ['pagi', 'Pagi', '08:00–14:00'],
+  ['semua', 'Semua', '06:00–21:00'],
+  ['pagi', 'Pagi', '06:00–14:00'],
   ['siang', 'Siang', '14:00–21:00']
 ];
 
@@ -1099,7 +1099,7 @@ export default function DashboardPage({
 
   // Perbandingan shift
   const shiftRows = [
-    { key: 'pagi', label: 'Pagi', range: '08:00–14:00', masuk: shiftPagiMasuk, keluar: shiftPagiKeluar, color: SHIFT_COLORS.pagi },
+    { key: 'pagi', label: 'Pagi', range: '06:00–14:00', masuk: shiftPagiMasuk, keluar: shiftPagiKeluar, color: SHIFT_COLORS.pagi },
     { key: 'siang', label: 'Siang', range: '14:00–21:00', masuk: shiftSiangMasuk, keluar: shiftSiangKeluar, color: SHIFT_COLORS.siang }
   ];
   const maxShiftVal = Math.max(shiftPagiMasuk, shiftPagiKeluar, shiftSiangMasuk, shiftSiangKeluar, 1);

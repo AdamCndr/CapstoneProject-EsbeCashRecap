@@ -6,7 +6,7 @@ const STORAGE_USERS_KEY = 'esbe_registered_accounts';
 export const ABSOLUTE_OWNER = {
   id: 'usr-owner-root',
   username: 'owner',
-  name: 'Pemilik Toko (Esbe)',
+  name: 'Umar Syafie',
   role: 'Pemilik',
   createdAt: '2026-01-01',
   isAbsolute: true

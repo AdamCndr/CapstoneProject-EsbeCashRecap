@@ -145,9 +145,10 @@ export default function App() {
     getMeRequest()
       .then((res) => {
         if (cancelled || !res?.data?.user) return;
-        const { id, username, role } = res.data.user;
+        const { id, username, role, full_name, fullName, name } = res.data.user;
         const mappedRole = role === 'owner' ? 'Pemilik' : 'Karyawan';
-        setCurrentUser((prev) => (prev ? { ...prev, id, username, role: mappedRole } : prev));
+        const displayName = full_name || fullName || name;
+        setCurrentUser((prev) => (prev ? { ...prev, id, username, role: mappedRole, ...(displayName ? { name: displayName } : {}) } : prev));
       })
       .catch((err) => {
         if (!cancelled && err?.response?.status === 401) {

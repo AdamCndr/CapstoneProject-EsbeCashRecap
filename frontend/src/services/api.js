@@ -53,6 +53,7 @@ export async function loginRequest(username, password) {
         user: {
           id: isOwner ? 'mock-owner-1' : 'mock-staff-1',
           username: username || (isOwner ? 'owner' : 'kasir'),
+          full_name: isOwner ? 'Umar Syafie' : null,
           role: isOwner ? 'owner' : 'staff',
         },
       },

@@ -33,7 +33,7 @@ export default function WelcomePage({ user, onReveal, onDone }) {
     };
   }, [onReveal, finish]);
 
-  const fullName = user?.name || user?.username || (user?.role === 'Pemilik' ? 'Pemilik' : 'Kasir');
+  const fullName = user?.name || user?.username || (user?.role === 'Pemilik' ? 'Pemilik' : 'Karyawan');
 
   return (
     <div className={`welcome-overlay ${leaving ? 'is-leaving' : ''}`}>

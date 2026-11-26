@@ -10,6 +10,7 @@ import {
   EyeOff,
   KeyRound,
   Lock,
+  Pencil,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -149,7 +150,7 @@ const focusRing =
 const ROLE_OPTIONS = [
   {
     value: 'Karyawan',
-    label: 'Karyawan (Kasir)',
+    label: 'Karyawan',
     Icon: User,
     glow: ['var(--amber-500)', 'var(--amber-400)'],
     active: 'border-transparent bg-[var(--amber-50)] text-[var(--amber-700)]'
@@ -189,7 +190,7 @@ export default function UserManagementPage({ currentUser }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('semua');
 
-  // Modal State Tambah Akun
+  // Modal State Tambah / Edit Akun (satu modal dipakai untuk dua mode)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newName, setNewName] = useState('');
@@ -197,6 +198,10 @@ export default function UserManagementPage({ currentUser }) {
   const [newRole, setNewRole] = useState('Karyawan');
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [editingUser, setEditingUser] = useState(null); // null = mode tambah, objek user = mode edit
+  const isEdit = !!editingUser;
+  // Mengedit akun yang sedang dipakai login: peran & username dikunci agar tidak terkunci keluar
+  const selfEdit = isEdit && currentUser?.username === editingUser.username;
 
   // Notifikasi Feedback
   const [notification, setNotification] = useState(null);
@@ -252,12 +257,33 @@ export default function UserManagementPage({ currentUser }) {
     transition: `width 900ms ${EASE_OUT} ${settled ? 0 : BASE_DELAY + i * STAGGER + 350}ms`
   });
 
-  // Modal tambah akun: buka/tutup dengan fade + scale (tetap ter-mount selama animasi keluar)
+  // Modal tambah/edit akun: buka/tutup dengan fade + scale (tetap ter-mount selama animasi keluar)
+  const resetForm = () => {
+    setNewUsername('');
+    setNewName('');
+    setNewPassword('');
+    setNewRole('Karyawan');
+    setShowPassword(false);
+  };
+
   const openAddModal = () => {
+    resetForm();
+    setEditingUser(null);
+    clearTimeout(closeTimer.current);
+    setIsAddModalOpen(true);
+  };
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+    setNewName(user.name || '');
+    setNewUsername(user.username || '');
+    setNewRole(user.role || 'Karyawan');
+    setNewPassword('');
     setShowPassword(false);
     clearTimeout(closeTimer.current);
     setIsAddModalOpen(true);
   };
+
   const closeAddModal = useCallback(() => {
     setModalShown(false);
     clearTimeout(closeTimer.current);
@@ -319,36 +345,44 @@ export default function UserManagementPage({ currentUser }) {
     }
   };
 
-  // Submit Tambah Akun
-  const handleCreateUser = async (e) => {
+  // Submit Tambah / Edit Akun
+  const handleSubmitUser = async (e) => {
     e.preventDefault();
-    if (!newUsername.trim() || !newName.trim() || !newPassword.trim()) {
+    if (!newUsername.trim() || !newName.trim() || (!isEdit && !newPassword.trim())) {
       showNotify('error', 'Semua kolom formulir wajib diisi.');
       return;
     }
-    if (newPassword.length < MIN_PASSWORD) {
+    if (newPassword && newPassword.length < MIN_PASSWORD) {
       showNotify('error', `Kata sandi minimal ${MIN_PASSWORD} karakter.`);
       return;
     }
 
     setSubmitting(true);
     try {
-      await userService.createUser({
-        username: newUsername,
-        name: newName,
-        password: newPassword,
-        role: newRole
-      });
+      if (isEdit) {
+        const changes = { username: newUsername, name: newName, role: newRole };
+        if (newPassword) changes.password = newPassword; // kosong = kata sandi tidak diubah
+        await userService.updateUser(editingUser.id, changes);
+        showNotify('success', `Akun @${newUsername} berhasil diperbarui.`);
+      } else {
+        await userService.createUser({
+          username: newUsername,
+          name: newName,
+          password: newPassword,
+          role: newRole
+        });
+        showNotify('success', `Akun ${newUsername} (${newRole}) berhasil ditambahkan.`);
+      }
 
-      showNotify('success', `Akun ${newUsername} (${newRole}) berhasil ditambahkan.`);
       closeAddModal();
-      setNewUsername('');
-      setNewName('');
-      setNewPassword('');
-      setNewRole('Karyawan');
+      resetForm();
       await loadUsers();
     } catch (err) {
-      showNotify('error', err.message || 'Terjadi kesalahan saat menambahkan akun.');
+      showNotify(
+        'error',
+        err.message ||
+        (isEdit ? 'Terjadi kesalahan saat memperbarui akun.' : 'Terjadi kesalahan saat menambahkan akun.')
+      );
     } finally {
       setSubmitting(false);
     }
@@ -454,7 +488,17 @@ export default function UserManagementPage({ currentUser }) {
 
   const passwordLen = newPassword.length;
   const passwordOk = passwordLen >= MIN_PASSWORD;
-  const canSubmit = !!newName.trim() && !!newUsername.trim() && passwordOk && !submitting;
+  // Mode edit: kata sandi boleh dikosongkan (tidak diganti), tapi kalau diisi harus cukup panjang
+  const passwordValid = isEdit ? passwordLen === 0 || passwordOk : passwordOk;
+  // Mode edit: tombol simpan aktif hanya kalau ada yang berubah
+  const dirty =
+    !isEdit ||
+    newName.trim() !== editingUser.name ||
+    newUsername !== editingUser.username ||
+    newRole !== editingUser.role ||
+    passwordLen > 0;
+  const canSubmit =
+    !!newName.trim() && !!newUsername.trim() && passwordValid && dirty && !submitting;
 
   const noMotion = prefersReducedMotion();
 
@@ -500,7 +544,7 @@ export default function UserManagementPage({ currentUser }) {
                 Manajemen Akun &amp; Akses
               </h1>
               <p className="mt-3 max-w-md text-sm leading-snug text-[color:var(--glass-text-soft)]">
-                Kelola kredensial akun kasir karyawan dan pemilik toko. Halaman ini hanya dapat diakses oleh Owner.
+                Kelola kredensial akun karyawan dan pemilik toko. Halaman ini hanya dapat diakses oleh Owner.
               </p>
             </div>
 
@@ -585,7 +629,7 @@ export default function UserManagementPage({ currentUser }) {
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <User className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
-                  Karyawan / Kasir
+                  Karyawan
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{employeeCount}</p>
                 <div className="mt-auto pt-3">
@@ -613,7 +657,7 @@ export default function UserManagementPage({ currentUser }) {
         <p className="text-sm leading-5 text-[var(--text-muted)]">
           <span className="font-semibold text-[var(--royal-700)]">Proteksi Akun Absolut:</span> Sistem
           memiliki 1 Akun Pemilik Absolut (Master Backup Owner) yang terkunci secara permanen. Anda
-          dapat menambah akun Owner lain maupun kasir, namun akun absolut tidak dapat dihapus demi
+          dapat menambah akun Owner lain maupun karyawan, namun akun absolut tidak dapat dihapus demi
           memastikan toko selalu memiliki akses cadangan jika akun lain bermasalah.
         </p>
       </div>
@@ -783,30 +827,44 @@ export default function UserManagementPage({ currentUser }) {
                         {isAbs ? (
                           <span
                             className="select-none px-2 py-1 text-xs italic text-[var(--text-muted)]"
-                            title="Akun absolut dilindungi sistem dan tidak dapat dihapus"
+                            title="Akun absolut dilindungi sistem dan tidak dapat diubah atau dihapus"
                           >
                             Terkunci
                           </span>
                         ) : (
-                          <GlowPill radius="0.5rem" press color="var(--cash-out)" className="inline-flex">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(user)}
-                              disabled={isCurrent}
-                              className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${isCurrent
-                                ? 'cursor-not-allowed border-[var(--border-default)] text-[var(--text-muted)] active:scale-100'
-                                : 'border-[var(--border-default)] text-[var(--cash-out)] hover:border-[var(--cash-out)] hover:bg-[var(--cash-out-light)]'
-                                }`}
-                              title={
-                                isCurrent
-                                  ? 'Tidak bisa menghapus akun yang sedang aktif digunakan'
-                                  : 'Hapus akun ini'
-                              }
-                            >
-                              <Trash2 className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
-                              Hapus
-                            </button>
-                          </GlowPill>
+                          <div className="inline-flex items-center justify-end gap-2">
+                            <GlowPill radius="0.5rem" press className="inline-flex">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(user)}
+                                className={`group inline-flex items-center gap-1 rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--royal-700)] transition-all duration-150 hover:border-[var(--royal-500)] hover:bg-[var(--royal-50)] active:scale-95 motion-reduce:transition-none ${focusRing}`}
+                                title="Edit akun ini"
+                              >
+                                <Pencil className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                                Edit
+                              </button>
+                            </GlowPill>
+
+                            <GlowPill radius="0.5rem" press color="var(--cash-out)" className="inline-flex">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={isCurrent}
+                                className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${isCurrent
+                                  ? 'cursor-not-allowed border-[var(--border-default)] text-[var(--text-muted)] active:scale-100'
+                                  : 'border-[var(--border-default)] text-[var(--cash-out)] hover:border-[var(--cash-out)] hover:bg-[var(--cash-out-light)]'
+                                  }`}
+                                title={
+                                  isCurrent
+                                    ? 'Tidak bisa menghapus akun yang sedang aktif digunakan'
+                                    : 'Hapus akun ini'
+                                }
+                              >
+                                <Trash2 className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                                Hapus
+                              </button>
+                            </GlowPill>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -818,7 +876,7 @@ export default function UserManagementPage({ currentUser }) {
         )}
       </section>
 
-      {/* Modal Tambah Akun Baru */}
+      {/* Modal Tambah / Edit Akun */}
       {isAddModalOpen &&
         createPortal(
           <div
@@ -846,14 +904,20 @@ export default function UserManagementPage({ currentUser }) {
               <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4">
                 <div className="group flex items-start gap-3">
                   <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--royal-50)] text-[var(--royal-700)]">
-                    <UserPlus {...ico} className={iconCls()} />
+                    {isEdit ? (
+                      <Pencil {...ico} className={iconCls()} />
+                    ) : (
+                      <UserPlus {...ico} className={iconCls()} />
+                    )}
                   </span>
                   <div>
                     <h2 id={titleId} className="text-lg font-semibold leading-6 text-[var(--text-main)]">
-                      Tambah Akun Baru
+                      {isEdit ? 'Edit Akun' : 'Tambah Akun Baru'}
                     </h2>
                     <p className="mt-0.5 text-xs leading-4 text-[var(--text-muted)]">
-                      Akun langsung aktif setelah disimpan.
+                      {isEdit
+                        ? 'Perubahan langsung berlaku setelah disimpan.'
+                        : 'Akun langsung aktif setelah disimpan.'}
                     </p>
                   </div>
                 </div>
@@ -868,9 +932,9 @@ export default function UserManagementPage({ currentUser }) {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateUser} className="flex min-h-0 flex-1 flex-col text-sm">
+              <form onSubmit={handleSubmitUser} className="flex min-h-0 flex-1 flex-col text-sm">
                 <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-5">
-                  <fieldset disabled={submitting}>
+                  <fieldset disabled={submitting || selfEdit} className={selfEdit ? 'opacity-60' : ''}>
                     <legend className={label}>Peran / Hak Akses</legend>
                     <div className="grid grid-cols-2 gap-2">
                       {ROLE_OPTIONS.map((opt) => {
@@ -908,7 +972,7 @@ export default function UserManagementPage({ currentUser }) {
                       })}
                     </div>
                     <p className={`${hint} rounded-lg bg-[var(--surface-muted)] px-3 py-2`} aria-live="polite">
-                      {roleDescription}
+                      {selfEdit ? 'Peran akun yang sedang Anda gunakan tidak dapat diubah.' : roleDescription}
                     </p>
                   </fieldset>
 
@@ -947,6 +1011,7 @@ export default function UserManagementPage({ currentUser }) {
                         autoCapitalize="none"
                         spellCheck={false}
                         placeholder="rian"
+                        disabled={selfEdit}
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value.replace(/\s/g, '').toLowerCase())}
                         className={`${field} pl-8 font-mono`}
@@ -956,7 +1021,7 @@ export default function UserManagementPage({ currentUser }) {
 
                   <div>
                     <label htmlFor="new-password" className={label}>
-                      Kata Sandi Sementara
+                      {isEdit ? 'Kata Sandi Baru (opsional)' : 'Kata Sandi Sementara'}
                     </label>
                     <GlowPill field className="group">
                       <KeyRound
@@ -966,7 +1031,7 @@ export default function UserManagementPage({ currentUser }) {
                       <input
                         id="new-password"
                         type={showPassword ? 'text' : 'password'}
-                        required
+                        required={!isEdit}
                         minLength={MIN_PASSWORD}
                         autoComplete="new-password"
                         placeholder={`Minimal ${MIN_PASSWORD} karakter`}
@@ -991,7 +1056,9 @@ export default function UserManagementPage({ currentUser }) {
                       aria-live="polite"
                     >
                       {passwordLen === 0
-                        ? 'Berikan ke pengguna, lalu minta mereka menggantinya.'
+                        ? isEdit
+                          ? 'Kosongkan jika tidak ingin mengganti kata sandi.'
+                          : 'Berikan ke pengguna, lalu minta mereka menggantinya.'
                         : passwordOk
                           ? 'Panjang kata sandi sudah cukup.'
                           : `Kurang ${MIN_PASSWORD - passwordLen} karakter lagi.`}
@@ -1009,7 +1076,7 @@ export default function UserManagementPage({ currentUser }) {
                     Batal
                   </button>
                   <button type="submit" disabled={!canSubmit} className={btnPrimary}>
-                    {submitting ? 'Menyimpan...' : 'Simpan Akun'}
+                    {submitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Simpan Akun'}
                   </button>
                 </div>
               </form>

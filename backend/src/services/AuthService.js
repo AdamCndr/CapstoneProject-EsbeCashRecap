@@ -25,7 +25,7 @@ class AuthService {
    */
   async verifyUserCredential(username, password) {
     const result = await this._query(
-      `SELECT u.user_id, u.username, u.password, u.is_active, r.role_name
+      `SELECT u.user_id, u.username, u.fullname AS full_name, u.password, u.is_active, r.role_name
        FROM users u
        INNER JOIN roles r ON u.role_id = r.role_id
        WHERE u.username = $1
@@ -54,6 +54,7 @@ class AuthService {
     return {
       id: user.user_id,
       username: user.username,
+      full_name: user.full_name || null,
       role: user.role_name,
     };
   }

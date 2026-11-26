@@ -33,6 +33,7 @@ class AuthHandler {
           user: {
             id: user.id,
             username: user.username,
+            full_name: user.full_name || null,
             role: user.role,
           },
         },
@@ -45,7 +46,7 @@ class AuthHandler {
    * Mengembalikan data user terautentikasi dari payload JWT.
    */
   async getMeHandler(request, h) {
-    const { id, username, role } = request.auth.credentials;
+    const { id, username, full_name, role } = request.auth.credentials;
 
     return h
       .response({
@@ -54,6 +55,7 @@ class AuthHandler {
           user: {
             id,
             username,
+            full_name: full_name || null,
             role,
           },
         },
