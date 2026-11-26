@@ -3,7 +3,8 @@ import { ArrowLeft, ArrowRight, Lock, ShieldCheck, Store, User } from 'lucide-re
 import { btnPrimary, btnSecondary, card, field, hint, ico, label, motion, Notice } from '../lib/ui';
 import { usePageReveal } from '../lib/motion';
 import ShiftSwitch from '../components/ui/ShiftSwitch';
-import { getStoredUsers } from '../services/userService';
+import { loginRequest, setStoredToken } from '../services/api';
+import GridSpinner from '../components/GridSpinner';
 
 const EXIT_MS = 450; // login memudar keluar
 const PAUSE_MS = 250; // jeda kosong sebelum greeting
@@ -47,7 +48,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [registeredAccounts] = useState(() => getStoredUsers());
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [detectedUser, setDetectedUser] = useState(null);
 
   const [selectedShift, setSelectedShift] = useState(() =>
@@ -110,10 +111,10 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
   const dateText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
   const timeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-  // Submit: validasi & deteksi role
-  const handleCheckCredentials = (e) => {
+  // Submit: validasi kredensial ke backend /auth/login
+  const handleCheckCredentials = async (e) => {
     e.preventDefault();
-    if (phase !== 'login') return;
+    if (phase !== 'login' || isSubmitting) return;
     setError('');
 
     const cleanUser = username.trim().toLowerCase();
@@ -122,36 +123,26 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
       return;
     }
 
-    const existing = registeredAccounts.find((acc) => acc.username.toLowerCase() === cleanUser);
+    setIsSubmitting(true);
+    try {
+      const res = await loginRequest(cleanUser, password);
+      const { accessToken, user } = res.data;
+      setStoredToken(accessToken);
 
-    let userRole;
-    let displayName;
+      const userRole = user.role === 'owner' ? 'Pemilik' : 'Karyawan';
+      const displayName = userRole === 'Pemilik' ? `Pemilik (${user.username})` : `Kasir (${user.username})`;
+      const userData = { id: user.id, username: user.username, name: displayName, role: userRole };
 
-    if (existing) {
-      userRole = existing.role;
-      displayName = existing.name;
-    } else {
-      const isOwnerKeyword =
-        cleanUser.includes('owner') ||
-        cleanUser.includes('admin') ||
-        cleanUser.includes('pemilik') ||
-        cleanUser.includes('bos');
-
-      if (isOwnerKeyword) {
-        userRole = 'Pemilik';
-        displayName = `Pemilik (${username.trim()})`;
+      if (userRole === 'Pemilik') {
+        startTransition({ ...userData, shift: null });
       } else {
-        userRole = 'Karyawan';
-        displayName = `Kasir (${username.trim()})`;
+        setDetectedUser(userData); // panel shift muncul di samping
       }
-    }
-
-    const userData = { username: cleanUser, name: displayName, role: userRole };
-
-    if (userRole === 'Pemilik') {
-      startTransition({ ...userData, shift: null });
-    } else {
-      setDetectedUser(userData); // panel shift muncul di samping
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Gagal login. Periksa koneksi backend atau kredensial Anda.';
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -274,9 +265,15 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                       </div>
                     </div>
 
-                    <button type="submit" className={`${btnPrimary} w-full`}>
-                      Masuk
-                      <ArrowRight {...ico} />
+                    <button type="submit" disabled={isSubmitting} className={`${btnPrimary} w-full disabled:opacity-70`}>
+                      {isSubmitting ? (
+                        <GridSpinner size="sm" label="Memproses" />
+                      ) : (
+                        <>
+                          Masuk
+                          <ArrowRight {...ico} />
+                        </>
+                      )}
                     </button>
                   </form>
 

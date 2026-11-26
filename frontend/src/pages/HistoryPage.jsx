@@ -5,7 +5,9 @@ import {
   ArrowLeftRight,
   ArrowUp,
   ArrowUpDown,
+  ExternalLink,
   Eye,
+  ImageOff,
   Paperclip,
   Plus,
   Trash2,
@@ -187,6 +189,8 @@ export default function HistoryPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProofModal, setSelectedProofModal] = useState(null);
   const [modalShown, setModalShown] = useState(false);
+  const [proofStatus, setProofStatus] = useState('loading'); // loading | ok | error
+  const [proofZoom, setProofZoom] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [sort, setSort] = useState({ key: null, dir: 'asc' });
@@ -343,9 +347,11 @@ export default function HistoryPage({
     setColumnFilters((prev) => ({ ...prev, [key]: '' }));
 
   // Modal bukti: buka/tutup dengan fade + scale (tetap ter-mount selama animasi keluar).
-  const openProof = (src) => {
+  const openProof = (trx) => {
     clearTimeout(closeTimer.current);
-    setSelectedProofModal(src);
+    setProofStatus('loading');
+    setProofZoom(false);
+    setSelectedProofModal(trx);
   };
 
   const closeProof = useCallback(() => {
@@ -604,33 +610,33 @@ export default function HistoryPage({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <GlowPill field>
             <ColumnFilterSelect
-            label="shift"
-            ariaLabel="Filter shift"
-            value={filterShift === 'semua' ? '' : filterShift}
-            options={SHIFT_OPTIONS}
-            onChange={(value) => setFilterShift(value || 'semua')}
-            size="md"
-          />
+              label="shift"
+              ariaLabel="Filter shift"
+              value={filterShift === 'semua' ? '' : filterShift}
+              options={SHIFT_OPTIONS}
+              onChange={(value) => setFilterShift(value || 'semua')}
+              size="md"
+            />
           </GlowPill>
           <GlowPill field>
             <ColumnFilterSelect
-            label="metode"
-            ariaLabel="Filter metode"
-            value={filterMethod === 'semua' ? '' : filterMethod}
-            options={METHOD_OPTIONS}
-            onChange={(value) => setFilterMethod(value || 'semua')}
-            size="md"
-          />
+              label="metode"
+              ariaLabel="Filter metode"
+              value={filterMethod === 'semua' ? '' : filterMethod}
+              options={METHOD_OPTIONS}
+              onChange={(value) => setFilterMethod(value || 'semua')}
+              size="md"
+            />
           </GlowPill>
           <GlowPill field>
             <ColumnFilterSelect
-            label="jenis kas"
-            ariaLabel="Filter jenis kas"
-            value={filterType === 'semua' ? '' : filterType}
-            options={TYPE_OPTIONS}
-            onChange={(value) => setFilterType(value || 'semua')}
-            size="md"
-          />
+              label="jenis kas"
+              ariaLabel="Filter jenis kas"
+              value={filterType === 'semua' ? '' : filterType}
+              options={TYPE_OPTIONS}
+              onChange={(value) => setFilterType(value || 'semua')}
+              size="md"
+            />
           </GlowPill>
         </div>
 
@@ -638,16 +644,16 @@ export default function HistoryPage({
           <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filter kolom aktif">
             {activeChips.map(([key, value]) => (
               <GlowPill key={key} radius="9999px" press className="inline-flex">
-              <button
-                type="button"
-                onClick={() => clearColumnFilter(key)}
-                aria-label={`Hapus filter ${filterText(key)}`}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-[color:var(--royal-300)] bg-[var(--surface-muted)] py-1 pl-3 pr-2 text-xs font-medium text-[var(--royal-600)] transition-all duration-150 hover:bg-[var(--surface-hover)] active:scale-95 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--royal-500)]"
-              >
-                <span className="font-normal text-[var(--text-muted)]">{filterText(key)}:</span>
-                {value}
-                <X className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => clearColumnFilter(key)}
+                  aria-label={`Hapus filter ${filterText(key)}`}
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-[color:var(--royal-300)] bg-[var(--surface-muted)] py-1 pl-3 pr-2 text-xs font-medium text-[var(--royal-600)] transition-all duration-150 hover:bg-[var(--surface-hover)] active:scale-95 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--royal-500)]"
+                >
+                  <span className="font-normal text-[var(--text-muted)]">{filterText(key)}:</span>
+                  {value}
+                  <X className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
+                </button>
               </GlowPill>
             ))}
             <button
@@ -782,7 +788,7 @@ export default function HistoryPage({
                             <GlowPill press className="inline-flex">
                               <button
                                 type="button"
-                                onClick={() => openProof(trx.proofUrl)}
+                                onClick={() => openProof(trx)}
                                 className={`${btnSecondary} group h-8 px-3`}
                               >
                                 <Eye {...ico} className={iconCls()} />
@@ -842,7 +848,7 @@ export default function HistoryPage({
       {selectedProofModal &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim)] p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4 backdrop-blur-[2px]"
             style={{
               opacity: modalShown ? 1 : 0,
               transition: noMotion ? 'none' : 'opacity 180ms ease'
@@ -856,33 +862,84 @@ export default function HistoryPage({
               role="dialog"
               aria-modal="true"
               aria-labelledby={dialogTitleId}
-              className={`${card} w-full max-w-lg p-4 shadow-[var(--shadow-popover-lg)]`}
+              className={`${card} flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden !p-0 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.18),0_6px_16px_-6px_rgba(15,23,42,0.10)]`}
               style={{
                 transform: modalShown ? 'none' : 'translateY(8px) scale(0.95)',
                 transition: noMotion ? 'none' : `transform 260ms ${EASE_OUT}`
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              <div className="mb-3 flex items-center justify-between">
-                <h3 id={dialogTitleId} className="text-base font-medium leading-6 text-[var(--text-main)]">
-                  Bukti transaksi
-                </h3>
-                <button
-                  ref={closeRef}
-                  type="button"
-                  onClick={closeProof}
-                  className={`${iconBtn} group`}
-                  aria-label="Tutup"
-                >
-                  <X {...ico} className={iconCls()} />
-                </button>
+              <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle)] px-5 py-4">
+                <div className="min-w-0">
+                  <h3 id={dialogTitleId} className="truncate text-base font-semibold leading-6 text-[var(--text-main)]">
+                    {selectedProofModal.title || 'Bukti transaksi'}
+                  </h3>
+                  <p className="mt-0.5 truncate text-xs leading-4 text-[var(--text-muted)]">
+                    <span className="font-mono">{selectedProofModal.id}</span>
+                    {selectedProofModal.date ? ` · ${selectedProofModal.date}` : ''}
+                    {selectedProofModal.time ? ` ${selectedProofModal.time}` : ''}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span
+                    className={`text-base font-semibold tabular-nums ${selectedProofModal.type === 'pengeluaran' ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
+                      }`}
+                  >
+                    {selectedProofModal.type === 'pengeluaran' ? '−' : '+'} {formatRupiah(selectedProofModal.amount)}
+                  </span>
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    onClick={closeProof}
+                    className={`${iconBtn} group`}
+                    aria-label="Tutup"
+                  >
+                    <X {...ico} className={iconCls()} />
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-center rounded-xl border border-[var(--border-default)] bg-[var(--surface-muted)] p-2">
-                <img
-                  src={selectedProofModal}
-                  alt="Bukti transaksi"
-                  className="max-h-[70vh] rounded-lg bg-[var(--surface-card)] object-contain"
-                />
+
+              <div className="relative min-h-[12rem] flex-1 overflow-auto bg-[var(--surface-muted)] p-4">
+                {proofStatus === 'loading' && (
+                  <div className="absolute inset-4 animate-pulse rounded-xl bg-[var(--border-subtle)] motion-reduce:animate-none" aria-hidden="true" />
+                )}
+                {proofStatus === 'error' ? (
+                  <div className="flex h-48 flex-col items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
+                    <ImageOff {...ico} className="h-6 w-6" />
+                    Gambar bukti gagal dimuat.
+                  </div>
+                ) : (
+                  <img
+                    src={selectedProofModal.proofUrl}
+                    alt={`Bukti transaksi ${selectedProofModal.id}`}
+                    onLoad={() => setProofStatus('ok')}
+                    onError={() => setProofStatus('error')}
+                    onClick={() => setProofZoom((z) => !z)}
+                    className={`mx-auto rounded-lg bg-[var(--surface-card)] ${proofZoom ? 'max-w-none cursor-zoom-out' : 'max-h-[60vh] max-w-full cursor-zoom-in object-contain'
+                      } ${proofStatus === 'ok' ? 'opacity-100' : 'opacity-0'}`}
+                    style={{ transition: noMotion ? 'none' : 'opacity 200ms ease' }}
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] px-5 py-3">
+                <p className="text-xs text-[var(--text-muted)]">
+                  {proofStatus === 'ok' ? (proofZoom ? 'Klik gambar untuk memperkecil' : 'Klik gambar untuk memperbesar') : '\u00A0'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedProofModal.proofUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${btnSecondary} group h-9 px-3`}
+                  >
+                    <ExternalLink {...ico} className={iconCls()} />
+                    Buka asli
+                  </a>
+                  <button type="button" onClick={closeProof} className={`${btnSecondary} h-9 px-4`}>
+                    Tutup
+                  </button>
+                </div>
               </div>
             </div>
           </div>,
