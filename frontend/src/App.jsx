@@ -5,6 +5,7 @@ import { INITIAL_MOCK_TRANSACTIONS } from './data/mockData';
 import Header from './components/Header';
 import Navbar from './components/Navbar';
 import Scrollbar from './components/Scrollbar';
+import TopLoadingBar from './components/TopLoadingBar';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TransactionFormPage from './pages/TransactionFormPage';
@@ -291,6 +292,7 @@ export default function App() {
 
   return (
     <>
+      <TopLoadingBar trigger={currentPage} />
       {currentUser && (
         <div
           className={`app-shell min-h-screen bg-[var(--surface-app)] text-[var(--text-main)] flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 lg:p-6 font-sans ${appRevealed ? 'is-revealed' : ''}`}

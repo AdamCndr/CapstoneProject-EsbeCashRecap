@@ -4,6 +4,7 @@ import { btnPrimary, btnSecondary, card, field, hint, ico, label, motion, Notice
 import { usePageReveal } from '../lib/motion';
 import ShiftSwitch from '../components/ui/ShiftSwitch';
 import { loginRequest, setStoredToken } from '../services/api';
+import GridSpinner from '../components/GridSpinner';
 
 const EXIT_MS = 450; // login memudar keluar
 const PAUSE_MS = 250; // jeda kosong sebelum greeting
@@ -264,9 +265,15 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                       </div>
                     </div>
 
-                    <button type="submit" className={`${btnPrimary} w-full`}>
-                      Masuk
-                      <ArrowRight {...ico} />
+                    <button type="submit" disabled={isSubmitting} className={`${btnPrimary} w-full disabled:opacity-70`}>
+                      {isSubmitting ? (
+                        <GridSpinner size="sm" label="Memproses" />
+                      ) : (
+                        <>
+                          Masuk
+                          <ArrowRight {...ico} />
+                        </>
+                      )}
                     </button>
                   </form>
 

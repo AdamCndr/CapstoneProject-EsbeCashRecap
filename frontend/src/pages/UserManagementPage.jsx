@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { TableSkeleton } from '../components/Skeleton';
 import { createPortal } from 'react-dom';
 import {
   ArrowDown,
@@ -671,7 +672,7 @@ export default function UserManagementPage({ currentUser }) {
         </div>
 
         {loading ? (
-          <EmptyNote>Memuat data pengguna...</EmptyNote>
+          <TableSkeleton rows={5} cols={4} />
         ) : filteredUsers.length === 0 ? (
           <EmptyNote>Tidak ada akun yang cocok dengan pencarian atau filter.</EmptyNote>
         ) : (

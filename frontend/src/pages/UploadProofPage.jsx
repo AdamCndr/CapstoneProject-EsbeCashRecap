@@ -9,6 +9,7 @@ import ColumnFilterSelect from '../components/ui/ColumnFilterSelect';
 import EmptyNote from '../components/ui/EmptyNote';
 import { btnPrimary, ico, label, Notice } from '../lib/ui';
 import { extractTransactionProofRequest } from '../services/api';
+import GridSpinner from '../components/GridSpinner';
 
 // ── Animasi masuk halaman (sama dengan Dashboard: EASE_OUT + stagger) ─────────
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -487,8 +488,12 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                 )}
               </div>
 
-              <button type="submit" className={`${btnPrimary} w-full`}>
-                Simpan lampiran
+              <button type="submit" disabled={isUploading} className={`${btnPrimary} w-full disabled:opacity-70`}>
+                {isUploading ? (
+                  <GridSpinner size="sm" label="Mengunggah dan mengekstrak" />
+                ) : (
+                  'Simpan lampiran'
+                )}
               </button>
             </form>
           </div>
