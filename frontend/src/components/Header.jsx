@@ -28,7 +28,7 @@ const prefersReducedMotion = () =>
 // Titik shift: versi cerah dari --shift-siang / --shift-pagi agar tetap terlihat di sayap biru.
 const SHIFTS = {
   siang: { label: 'Siang', time: '14:00–21:00', dot: 'var(--royal-400)' },
-  pagi: { label: 'Pagi', time: '08:00–14:00', dot: 'var(--amber-400)' },
+  pagi: { label: 'Pagi', time: '06:00–14:00', dot: 'var(--amber-400)' },
 };
 
 const WING_RADIUS = 24; // sama dengan rounded-b-[24px] notch

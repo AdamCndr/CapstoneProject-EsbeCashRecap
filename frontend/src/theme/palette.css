@@ -65,7 +65,7 @@
   --cash-out:          #DC2626; /* Pengeluaran Kas (Red 600, kontras 4.83:1 di putih) */
   --cash-out-light:    #FEF2F2; /* Latar badge pengeluaran */
   
-  --shift-pagi:        #F59E0B; /* Shift Pagi (08:00 - 14:00, Amber) */
+  --shift-pagi:        #F59E0B; /* Shift Pagi (06:00 - 14:00, Amber) */
   --shift-siang:       #2563EB; /* Shift Siang (14:00 - 21:00, Royal Blue) */
 
   /* ========================================================================

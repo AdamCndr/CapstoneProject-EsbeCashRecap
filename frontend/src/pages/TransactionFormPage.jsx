@@ -74,7 +74,7 @@ const TYPE_OPTIONS = [
 
 // Jam shift sama dengan kontrol shift di Dashboard
 const SHIFT_META = {
-  pagi: { label: 'Pagi', range: '08:00–14:00', Icon: Sun },
+  pagi: { label: 'Pagi', range: '06:00–14:00', Icon: Sun },
   siang: { label: 'Siang', range: '14:00–21:00', Icon: Sunset }
 };
 

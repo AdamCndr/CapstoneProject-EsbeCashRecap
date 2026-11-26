@@ -26,7 +26,7 @@ export const iconBtn = `inline-flex h-8 w-8 cursor-pointer items-center justify-
 export const methodLabel = { tunai: 'Tunai', qris: 'QRIS', transfer: 'Transfer' };
 export const methodIcon = { tunai: Banknote, qris: QrCode, transfer: Landmark };
 export const shiftLabel = { pagi: 'Pagi', siang: 'Siang' };
-export const shiftHours = { pagi: '08:00–14:00', siang: '14:00–21:00' };
+export const shiftHours = { pagi: '06:00–14:00', siang: '14:00–21:00' };
 
 // Tanggal & jam lokal (toISOString memakai UTC, di WIB salah hari sebelum 07:00)
 export const todayISO = () => new Date().toLocaleDateString('sv-SE');
