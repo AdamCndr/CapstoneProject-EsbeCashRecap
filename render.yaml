@@ -1,0 +1,59 @@
+# render.yaml — Konfigurasi Infrastructure-as-Code untuk Render
+# Referensi: https://render.com/docs/blueprint-spec
+#
+# Cara pakai: letakkan file ini di root MONOREPO, lalu di dashboard Render
+# pilih "New Blueprint Instance" dan arahkan ke repo GitHub ini.
+
+services:
+  - type: web
+    name: esbe-cash-recap-backend
+    runtime: node
+    # Root Directory: subfolder backend/ dalam monorepo
+    rootDir: backend
+    region: singapore
+    plan: free
+
+    buildCommand: npm install
+    startCommand: npm run migrate && npm start
+
+    # Variabel environment yang aman diatur via dashboard Render (tidak dicommit)
+    # Variabel di bawah ini hanya placeholder — isi nilainya di dashboard!
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # DATABASE_URL, JWT_SECRET, CORS_ORIGINS, AI_SERVICE_URL, AI_SERVICE_API_KEY
+      # WAJIB diisi manual di dashboard Render > Environment
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: LOGIN_RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: LOGIN_RATE_LIMIT_MAX
+        value: "10"
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: AI_SERVICE_TIMEOUT_MS
+        value: "30000"
+      - key: AI_SERVICE_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: payment-proofs
+
+    # Health check — Render memonitor endpoint ini setelah deploy
+    healthCheckPath: /health
+
+    # Auto-deploy setiap kali ada push ke branch main
+    autoDeploy: true

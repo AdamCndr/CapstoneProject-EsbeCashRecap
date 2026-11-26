@@ -1,21 +1,48 @@
 import path from 'node:path';
 import InvariantError from '../../exceptions/InvariantError.js';
 import UnsupportedMediaTypeError from '../../exceptions/UnsupportedMediaTypeError.js';
-import { ExtractTransactionMetadataSchema } from './schema.js';
+import {
+  ExtractTransactionMetadataSchema,
+  CashTransactionSchema,
+  ConfirmTransactionSchema,
+  UpdateTransactionSchema,
+  TransactionQuerySchema,
+} from './schema.js';
 
 export const MAX_PROOF_FILE_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_PROOF_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_PROOF_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
 /**
- * Validator untuk endpoint transaksi dan ekstraksi bukti pembayaran.
+ * Helper: jalankan validasi Joi dan lempar InvariantError jika gagal.
+ */
+function runValidation(schema, data) {
+  const { error, value } = schema.validate(data, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  if (error) {
+    const fields = error.details.map((detail) => ({
+      field: detail.path.join('.'),
+      message: detail.message,
+    }));
+    throw new InvariantError(
+      fields.map((item) => item.message).join('; '),
+      'VALIDATION_ERROR',
+      { fields },
+    );
+  }
+
+  return value;
+}
+
+/**
+ * Validator untuk seluruh endpoint transaksi.
  */
 const TransactionsValidator = {
   /**
-   * Memvalidasi field metadata non-file pada request POST /transactions/extract.
-   *
-   * @param {Record<string, unknown>} payload
-   * @returns {{ shift?: string, payment_method?: string, mock_scenario: string }}
+   * Validasi metadata POST /transactions/extract (mock).
    */
   validateExtractMetadata(payload) {
     const metadata = {
@@ -23,32 +50,11 @@ const TransactionsValidator = {
       payment_method: payload?.payment_method || undefined,
       mock_scenario: payload?.mock_scenario || undefined,
     };
-
-    const { error, value } = ExtractTransactionMetadataSchema.validate(metadata, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-
-    if (error) {
-      const fields = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
-      throw new InvariantError(
-        fields.map((item) => item.message).join('; '),
-        'VALIDATION_ERROR',
-        { fields },
-      );
-    }
-
-    return value;
+    return runValidation(ExtractTransactionMetadataSchema, metadata);
   },
 
   /**
-   * Memvalidasi keberadaan file stream dan jenis media gambar (jpg/png/webp).
-   *
-   * @param {unknown} fileStream
-   * @returns {{ filename: string, mimeType: string }}
+   * Validasi file stream bukti pembayaran.
    */
   validateProofFileStream(fileStream) {
     if (!fileStream || typeof fileStream.on !== 'function' || !fileStream.hapi) {
@@ -81,6 +87,53 @@ const TransactionsValidator = {
     }
 
     return { filename, mimeType };
+  },
+
+  /**
+   * Validasi POST /transactions/cash — transaksi tunai.
+   */
+  validateCashTransaction(payload) {
+    return runValidation(CashTransactionSchema, payload);
+  },
+
+  /**
+   * Validasi POST /transactions — konfirmasi/simpan transaksi.
+   * Aturan tambahan: non-tunai wajib ada payment_proof_id atau is_manual_input.
+   */
+  validateConfirmTransaction(payload) {
+    const value = runValidation(ConfirmTransactionSchema, payload);
+
+    // Aturan bisnis: non-tunai wajib bukti atau is_manual_input
+    if (value.payment_method !== 'tunai') {
+      if (!value.payment_proof_id && !value.is_manual_input) {
+        throw new InvariantError(
+          'Transaksi non-tunai wajib memiliki bukti pembayaran (payment_proof_id) atau ditandai sebagai input manual (is_manual_input = true)',
+          'VALIDATION_ERROR',
+          {
+            fields: [
+              { field: 'payment_proof_id', message: 'Bukti pembayaran wajib untuk non-tunai' },
+              { field: 'is_manual_input', message: 'Atau tandai sebagai input manual' },
+            ],
+          },
+        );
+      }
+    }
+
+    return value;
+  },
+
+  /**
+   * Validasi PATCH /transactions/{id} — update transaksi.
+   */
+  validateUpdateTransaction(payload) {
+    return runValidation(UpdateTransactionSchema, payload);
+  },
+
+  /**
+   * Validasi query GET /transactions — filter dan paginasi.
+   */
+  validateTransactionQuery(query) {
+    return runValidation(TransactionQuerySchema, query);
   },
 };
 

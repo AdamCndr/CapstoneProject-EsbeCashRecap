@@ -1,0 +1,285 @@
+{
+  "info": {
+    "_postman_id": "b7c2e1d0-5a4b-4c3d-9e8f-112233445566",
+    "name": "EsbeCashRecap - Transactions CRUD",
+    "description": "Koleksi Postman untuk menguji endpoint transaksi (POST /transactions/cash, POST /transactions, GET /transactions, GET/PATCH/DELETE /transactions/{id}), validasi Joi, RBAC, akses lintas user, dan idempotency.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "ownerToken", "value": "", "type": "string" },
+    { "key": "employeeToken", "value": "", "type": "string" },
+    { "key": "createdTrxId", "value": "", "type": "string" },
+    { "key": "ownerTrxId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0a. Login Owner",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login owner 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('ownerToken', pm.response.json().data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"owner\",\n  \"password\": \"owner123\"\n}" },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      }
+    },
+    {
+      "name": "0b. Login Employee",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login employee 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('employeeToken', pm.response.json().data.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"employee\",\n  \"password\": \"employee123\"\n}" },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      }
+    },
+    {
+      "name": "1. POST /transactions/cash - Valid (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "const trx = pm.response.json().data.transaction;",
+              "pm.test('Status terkonfirmasi & amount number', () => {",
+              "  pm.expect(trx.transaction_status).to.eql('terkonfirmasi');",
+              "  pm.expect(trx.amount).to.be.a('number').and.eql(25000);",
+              "});",
+              "pm.collectionVariables.set('createdTrxId', trx.transaction_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Fotokopi 100 lembar\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": 25000,\n  \"shift\": \"pagi\",\n  \"category_id\": 1,\n  \"transaction_date\": \"2026-11-26\",\n  \"notes\": \"Pelanggan umum\",\n  \"idempotency_key\": \"cash-demo-001\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "2. POST /transactions/cash - Double Submit Idempotent (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK (idempotent)', () => pm.response.to.have.status(200));",
+              "pm.test('ID transaksi sama', () => {",
+              "  pm.expect(String(pm.response.json().data.transaction.transaction_id)).to.eql(String(pm.collectionVariables.get('createdTrxId')));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Fotokopi 100 lembar\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": 25000,\n  \"shift\": \"pagi\",\n  \"category_id\": 1,\n  \"transaction_date\": \"2026-11-26\",\n  \"notes\": \"Pelanggan umum\",\n  \"idempotency_key\": \"cash-demo-001\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "3. POST /transactions/cash - Kosong (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "4. POST /transactions/cash - Amount Huruf (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Test huruf\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": \"seribu\",\n  \"shift\": \"pagi\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "5. POST /transactions/cash - Amount Negatif (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Test negatif\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": -5000,\n  \"shift\": \"pagi\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "6. POST /transactions/cash - Kirim external_trx_id (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Tunai dilarang external id\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": 10000,\n  \"shift\": \"pagi\",\n  \"external_trx_id\": \"EXT-123\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions/cash", "host": ["{{baseUrl}}"], "path": ["transactions", "cash"] }
+      }
+    },
+    {
+      "name": "7. POST /transactions - QRIS Manual Input Valid (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('ownerTrxId', pm.response.json().data.transaction.transaction_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{ownerToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Pembayaran QRIS Manual\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": 75000,\n  \"shift\": \"siang\",\n  \"payment_method\": \"qris\",\n  \"is_manual_input\": true,\n  \"external_trx_id\": \"NMID-881234\",\n  \"transaction_date\": \"2026-11-26\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] }
+      }
+    },
+    {
+      "name": "8. POST /transactions - Non-tunai Tanpa Bukti & Manual (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"QRIS Tanpa Bukti\",\n  \"transaction_type\": \"pemasukan\",\n  \"amount\": 50000,\n  \"shift\": \"pagi\",\n  \"payment_method\": \"qris\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] }
+      }
+    },
+    {
+      "name": "9. GET /transactions - Filter & Paginasi (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{ownerToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/transactions?shift=pagi&payment_method=tunai&page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions"],
+          "query": [
+            { "key": "shift", "value": "pagi" },
+            { "key": "payment_method", "value": "tunai" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "10. GET /transactions/{id} - Akses Lintas User oleh Employee (403)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{employeeToken}}" }],
+        "url": { "raw": "{{baseUrl}}/transactions/{{ownerTrxId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{ownerTrxId}}"] }
+      }
+    },
+    {
+      "name": "11. PATCH /transactions/{id} - Employee Ditolak (403)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 30000\n}" },
+        "url": { "raw": "{{baseUrl}}/transactions/{{createdTrxId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{createdTrxId}}"] }
+      }
+    },
+    {
+      "name": "12. PATCH /transactions/{id} - Owner Update (200)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{ownerToken}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 30000,\n  \"notes\": \"Koreksi jumlah lembar\"\n}" },
+        "url": { "raw": "{{baseUrl}}/transactions/{{createdTrxId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{createdTrxId}}"] }
+      }
+    },
+    {
+      "name": "13. DELETE /transactions/{id} - Employee Ditolak (403)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{employeeToken}}" }],
+        "url": { "raw": "{{baseUrl}}/transactions/{{createdTrxId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{createdTrxId}}"] }
+      }
+    },
+    {
+      "name": "14. DELETE /transactions/{id} - Owner Hapus (200)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{ownerToken}}" }],
+        "url": { "raw": "{{baseUrl}}/transactions/{{createdTrxId}}", "host": ["{{baseUrl}}"], "path": ["transactions", "{{createdTrxId}}"] }
+      }
+    }
+  ]
+}

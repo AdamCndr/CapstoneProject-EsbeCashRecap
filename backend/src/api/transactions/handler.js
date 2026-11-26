@@ -6,10 +6,6 @@ import { MAX_PROOF_FILE_BYTES } from '../../validator/transactions/index.js';
 
 /**
  * Membaca stream file upload menjadi Buffer sambil membatasi ukuran maksimal.
- *
- * @param {import('node:stream').Readable} stream
- * @param {number} maxBytes
- * @returns {Promise<Buffer>}
  */
 async function readStreamWithLimit(stream, maxBytes) {
   const chunks = [];
@@ -34,9 +30,7 @@ async function readStreamWithLimit(stream, maxBytes) {
 }
 
 /**
- * Menentukan shift default berdasarkan jam lokal WIB (pagi 06:00-13:59, siang 14:00-22:00).
- *
- * @returns {'pagi' | 'siang'}
+ * Menentukan shift default berdasarkan jam lokal WIB.
  */
 function inferCurrentShift() {
   const wibHour = Number(
@@ -52,14 +46,8 @@ function inferCurrentShift() {
 
 /**
  * Membangun payload dummy sesuai kontrak POST /transactions/extract.
- * Mendukung 4 skenario uji: success, duplicate, partial, dan ai_fallback.
  */
-function buildMockExtractPayload({
-  scenario,
-  shift,
-  paymentMethod,
-  proofMeta,
-}) {
+function buildMockExtractPayload({ scenario, shift, paymentMethod, proofMeta }) {
   const baseDate = '2026-11-25';
   const baseTime = '11:35:00';
   const resolvedShift = shift || inferCurrentShift();
@@ -76,17 +64,11 @@ function buildMockExtractPayload({
           code: 'AI_TIMEOUT',
           message: 'Ekstraksi otomatis melebihi batas waktu 30 detik (sudah dicoba ulang 1x).',
         },
-        proof: {
-          ...proofMeta,
-          image_phash: null,
-        },
+        proof: { ...proofMeta, image_phash: null },
         extraction: null,
         duplicate_check: {
-          is_duplicate: false,
-          severity: 'none',
-          warning_title: null,
-          warning_message: null,
-          matches: [],
+          is_duplicate: false, severity: 'none',
+          warning_title: null, warning_message: null, matches: [],
         },
         draft: {
           payment_proof_id: proofMeta.proof_id,
@@ -112,30 +94,17 @@ function buildMockExtractPayload({
         manual_input_required: false,
         ai_status: 'partial',
         fallback_reason: null,
-        proof: {
-          ...proofMeta,
-          image_phash: '8f12c34a7b910e22',
-        },
+        proof: { ...proofMeta, image_phash: '8f12c34a7b910e22' },
         extraction: {
-          amount: 75000,
-          transaction_time: null,
-          transaction_id: null,
+          amount: 75000, transaction_time: null, transaction_id: null,
           source: 'transfer',
-          confidence: {
-            amount: 0.89,
-            transaction_time: 0.0,
-            transaction_id: 0.0,
-            source: 0.85,
-          },
+          confidence: { amount: 0.89, transaction_time: 0.0, transaction_id: 0.0, source: 0.85 },
           method_used: 'llm_fallback',
           warnings: ['UNREADABLE_TIME', 'UNREADABLE_TRANSACTION_ID'],
         },
         duplicate_check: {
-          is_duplicate: false,
-          severity: 'none',
-          warning_title: null,
-          warning_message: null,
-          matches: [],
+          is_duplicate: false, severity: 'none',
+          warning_title: null, warning_message: null, matches: [],
         },
         draft: {
           payment_proof_id: proofMeta.proof_id,
@@ -164,49 +133,32 @@ function buildMockExtractPayload({
       manual_input_required: false,
       ai_status: 'success',
       fallback_reason: null,
-      proof: {
-        ...proofMeta,
-        image_phash: 'a4d3c2b1e0f98765',
-      },
+      proof: { ...proofMeta, image_phash: 'a4d3c2b1e0f98765' },
       extraction: {
         amount: 145000,
         transaction_time: `${baseDate}T${baseTime}+07:00`,
         transaction_id: 'NMID-992144812',
         source: 'QRIS',
-        confidence: {
-          amount: 0.98,
-          transaction_time: 0.94,
-          transaction_id: 0.91,
-          source: 0.99,
-        },
+        confidence: { amount: 0.98, transaction_time: 0.94, transaction_id: 0.91, source: 0.99 },
         method_used: 'ocr',
         warnings: [],
       },
       duplicate_check: isDuplicate
         ? {
-            is_duplicate: true,
-            severity: 'high',
+            is_duplicate: true, severity: 'high',
             warning_title: 'Bukti terindikasi duplikat',
             warning_message:
               'ID transaksi NMID-992144812 dengan nominal Rp 145.000 cocok dengan transaksi #42. Anda tetap dapat menyimpan transaksi dengan status Perlu ditinjau.',
-            matches: [
-              {
-                matched_transaction_id: 42,
-                match_method: 'reference_exact',
-                similarity_score: 98.0,
-                matched_amount: 145000,
-                matched_date: baseDate,
-                matched_time: baseTime,
-                matched_reference: 'NMID-992144812',
-              },
-            ],
+            matches: [{
+              matched_transaction_id: 42, match_method: 'reference_exact',
+              similarity_score: 98.0, matched_amount: 145000,
+              matched_date: baseDate, matched_time: baseTime,
+              matched_reference: 'NMID-992144812',
+            }],
           }
         : {
-            is_duplicate: false,
-            severity: 'none',
-            warning_title: null,
-            warning_message: null,
-            matches: [],
+            is_duplicate: false, severity: 'none',
+            warning_title: null, warning_message: null, matches: [],
           },
       draft: {
         payment_proof_id: proofMeta.proof_id,
@@ -225,22 +177,29 @@ function buildMockExtractPayload({
 }
 
 /**
- * Handler endpoint transaksi (saat ini menyediakan mock POST /transactions/extract).
+ * Handler endpoint transaksi (CRUD + mock extract).
  */
 class TransactionsHandler {
   /**
-   * @param {{ validator: import('../../validator/transactions/index.js').default }} deps
+   * @param {{ service: import('../../services/TransactionService.js').default, validator: Object }} deps
    */
-  constructor({ validator }) {
+  constructor({ service, validator }) {
+    this._service = service;
     this._validator = validator;
+
+    // Bind semua method
     this.postExtractTransactionHandler = this.postExtractTransactionHandler.bind(this);
+    this.postCashTransactionHandler = this.postCashTransactionHandler.bind(this);
+    this.postConfirmTransactionHandler = this.postConfirmTransactionHandler.bind(this);
+    this.getTransactionsHandler = this.getTransactionsHandler.bind(this);
+    this.getTransactionByIdHandler = this.getTransactionByIdHandler.bind(this);
+    this.patchTransactionHandler = this.patchTransactionHandler.bind(this);
+    this.deleteTransactionHandler = this.deleteTransactionHandler.bind(this);
   }
 
-  /**
-   * Mock handler POST /transactions/extract:
-   * Memvalidasi multipart file gambar, menghitung hash SHA-256, dan mengembalikan
-   * data ekstraksi dummy + status cek duplikat sesuai kontrak API.
-   */
+  /* ================================================================
+   * POST /transactions/extract  (mock — sudah ada)
+   * ================================================================ */
   async postExtractTransactionHandler(request, h) {
     const payload = request.payload || {};
     const { shift, payment_method: paymentMethod, mock_scenario: mockScenario } =
@@ -267,19 +226,121 @@ class TransactionsHandler {
     };
 
     const mockResult = buildMockExtractPayload({
-      scenario: mockScenario,
-      shift,
-      paymentMethod,
-      proofMeta,
+      scenario: mockScenario, shift, paymentMethod, proofMeta,
     });
 
-    return h
-      .response({
-        status: 'success',
-        message: mockResult.message,
-        data: mockResult.data,
-      })
-      .code(200);
+    return h.response({
+      status: 'success',
+      message: mockResult.message,
+      data: mockResult.data,
+    }).code(200);
+  }
+
+  /* ================================================================
+   * POST /transactions/cash
+   * ================================================================ */
+  async postCashTransactionHandler(request, h) {
+    const validated = this._validator.validateCashTransaction(request.payload);
+    const user = request.auth.credentials;
+
+    const { transaction, isIdempotent } = await this._service.createTransaction(
+      { ...validated, payment_method: 'tunai' },
+      user,
+    );
+
+    const statusCode = isIdempotent ? 200 : 201;
+    const message = isIdempotent
+      ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
+      : 'Transaksi tunai berhasil disimpan';
+
+    return h.response({
+      status: 'success',
+      message,
+      data: { transaction },
+    }).code(statusCode);
+  }
+
+  /* ================================================================
+   * POST /transactions  (konfirmasi / simpan)
+   * ================================================================ */
+  async postConfirmTransactionHandler(request, h) {
+    const validated = this._validator.validateConfirmTransaction(request.payload);
+    const user = request.auth.credentials;
+
+    const { transaction, isIdempotent } = await this._service.createTransaction(validated, user);
+
+    const statusCode = isIdempotent ? 200 : 201;
+    const message = isIdempotent
+      ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
+      : 'Transaksi berhasil disimpan';
+
+    return h.response({
+      status: 'success',
+      message,
+      data: { transaction },
+    }).code(statusCode);
+  }
+
+  /* ================================================================
+   * GET /transactions
+   * ================================================================ */
+  async getTransactionsHandler(request, h) {
+    const filters = this._validator.validateTransactionQuery(request.query);
+    const user = request.auth.credentials;
+
+    const result = await this._service.getTransactions(filters, user);
+
+    return h.response({
+      status: 'success',
+      data: result,
+    }).code(200);
+  }
+
+  /* ================================================================
+   * GET /transactions/{id}
+   * ================================================================ */
+  async getTransactionByIdHandler(request, h) {
+    const { id } = request.params;
+    const user = request.auth.credentials;
+
+    const transaction = await this._service.getTransactionById(Number(id), user);
+
+    return h.response({
+      status: 'success',
+      data: { transaction },
+    }).code(200);
+  }
+
+  /* ================================================================
+   * PATCH /transactions/{id}  (owner only)
+   * ================================================================ */
+  async patchTransactionHandler(request, h) {
+    const { id } = request.params;
+    const validated = this._validator.validateUpdateTransaction(request.payload);
+    const user = request.auth.credentials;
+
+    const transaction = await this._service.updateTransaction(Number(id), validated, user);
+
+    return h.response({
+      status: 'success',
+      message: 'Transaksi berhasil diperbarui',
+      data: { transaction },
+    }).code(200);
+  }
+
+  /* ================================================================
+   * DELETE /transactions/{id}  (owner only)
+   * ================================================================ */
+  async deleteTransactionHandler(request, h) {
+    const { id } = request.params;
+    const user = request.auth.credentials;
+
+    await this._service.deleteTransaction(Number(id), user);
+
+    return h.response({
+      status: 'success',
+      message: 'Transaksi berhasil dihapus',
+    }).code(200);
   }
 }
 

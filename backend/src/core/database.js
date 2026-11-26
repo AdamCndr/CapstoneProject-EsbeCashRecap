@@ -4,13 +4,22 @@ import config from './config.js';
 const { Pool } = pg;
 
 /**
- * Pool koneksi PostgreSQL menggunakan `pg`.
- * Mendukung `DATABASE_URL` (Neon/Render) maupun konfigurasi host terpisah (lokal).
+ * Pool koneksi PostgreSQL untuk Neon (via DATABASE_URL) atau PostgreSQL lokal.
+ *
+ * Neon free tier: pakai koneksi pool kecil (max 3) agar tidak kehabisan slot.
+ * Neon menggunakan SSL wajib — pastikan DATABASE_URL mengandung ?sslmode=require
+ * atau DB_SSL=true di env.
  */
+const isNeon = Boolean(
+  config.db.connectionString &&
+    (config.db.connectionString.includes('neon.tech') ||
+      config.db.connectionString.includes('neon.database')),
+);
+
 const poolConfig = config.db.connectionString
   ? {
       connectionString: config.db.connectionString,
-      ssl: config.db.ssl,
+      ssl: config.db.ssl || { rejectUnauthorized: false },
     }
   : {
       host: config.db.host,
@@ -23,8 +32,10 @@ const poolConfig = config.db.connectionString
 
 export const pool = new Pool({
   ...poolConfig,
-  max: 10,
-  idleTimeoutMillis: 30000,
+  // Neon free tier: 3 koneksi simultan; lokal: 10
+  max: isNeon ? 3 : 10,
+  // Tutup koneksi idle lebih cepat agar slot Neon tidak terblokir
+  idleTimeoutMillis: isNeon ? 10000 : 30000,
   connectionTimeoutMillis: 5000,
 });
 

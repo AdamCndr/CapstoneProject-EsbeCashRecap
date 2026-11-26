@@ -6,9 +6,9 @@ import routes from './routes.js';
  */
 const transactionsPlugin = {
   name: 'transactions',
-  version: '1.0.0',
-  register: async (server, { validator }) => {
-    const transactionsHandler = new TransactionsHandler({ validator });
+  version: '2.0.0',
+  register: async (server, { service, validator }) => {
+    const transactionsHandler = new TransactionsHandler({ service, validator });
     server.route(routes(transactionsHandler));
   },
 };

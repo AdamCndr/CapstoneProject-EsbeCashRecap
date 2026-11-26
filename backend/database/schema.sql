@@ -178,6 +178,8 @@ CREATE TABLE transaction (
     transaction_time TIME NOT NULL DEFAULT CURRENT_TIME,
     transaction_status VARCHAR(50) NOT NULL DEFAULT 'completed',
     notes TEXT,
+    external_trx_id VARCHAR(100),
+    idempotency_key VARCHAR(255),
     is_duplicate BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -249,6 +251,9 @@ CREATE INDEX idx_transaction_date ON transaction(transaction_date);
 CREATE INDEX idx_transaction_type ON transaction(transaction_type);
 CREATE INDEX idx_transaction_shift ON transaction(shift_type_id);
 CREATE INDEX idx_transaction_method ON transaction(payment_method_id);
+CREATE INDEX idx_transaction_status ON transaction(transaction_status);
+CREATE INDEX idx_transaction_recap_composite ON transaction(transaction_status, transaction_date, shift_type_id, payment_method_id);
+CREATE UNIQUE INDEX idx_transaction_idempotency ON transaction(created_by, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX idx_payment_proofs_hash ON payment_proofs(sha256_hash);
 CREATE INDEX idx_telegram_accounts_user_id ON telegram_accounts(user_id);
 CREATE INDEX idx_telegram_bot_sessions_account ON telegram_bot_sessions(telegram_account_id);

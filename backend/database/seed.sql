@@ -6,7 +6,7 @@
 -- 1. Master Roles
 INSERT INTO roles (role_name) VALUES
     ('owner'),
-    ('employee'),
+    ('employee')
 ON CONFLICT (role_name) DO NOTHING;
 
 -- 2. Master Pengguna Awal (Password di-hash dengan bcrypt cost 10)
@@ -18,8 +18,7 @@ ON CONFLICT (role_name) DO NOTHING;
 INSERT INTO users (role_id, fullname, username, password, is_active) VALUES
     ((SELECT role_id FROM roles WHERE role_name = 'owner'), 'Pemilik Toko Esbe', 'owner', '$2b$10$z/SjF4MZPCPv0I.9G.OgZuLNjdli5Te4TPrAnOiKuWmFr7DBMe3l2', TRUE),
     ((SELECT role_id FROM roles WHERE role_name = 'employee'), 'Karyawan Kasir', 'employee', '$2b$10$uQqD39m9Db9hKkeU1tIEG.McuHQD9Bt6kG3IW25MPntkyBhS70ELi', TRUE),
-    ((SELECT role_id FROM roles WHERE role_name = 'employee'), 'Karyawan Non-Aktif', 'nonaktif', '$2b$10$JIl3o91SDqVkBCoSKITnW.MjoBDia1eqIbIG1BfShB9LIr/Dtgrbi', FALSE),
-
+    ((SELECT role_id FROM roles WHERE role_name = 'employee'), 'Karyawan Non-Aktif', 'nonaktif', '$2b$10$JIl3o91SDqVkBCoSKITnW.MjoBDia1eqIbIG1BfShB9LIr/Dtgrbi', FALSE)
 ON CONFLICT (username) DO UPDATE SET
     role_id = EXCLUDED.role_id,
     fullname = EXCLUDED.fullname,
