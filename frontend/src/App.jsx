@@ -15,6 +15,14 @@ import UserManagementPage from './pages/UserManagementPage';
 import { btnPrimary, card } from './lib/ui';
 import { getMeRequest, getStoredToken, setStoredToken } from './services/api';
 
+// ── Transisi halaman ──────────────────────────────────────────────────────────
+const PAGE_EXIT_MS = 240; // samakan dengan durasi .page-leaving di App.css
+// Halaman yang sudah punya animasi masuk sendiri tidak diberi .page-entering
+const PAGES_WITH_OWN_ENTER = new Set(['dashboard']);
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 export default function App() {
   // 1. Autentikasi Pengguna (Tersimpan di localStorage agar tidak kembali ke login saat reload)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -68,6 +76,40 @@ export default function App() {
   // 4. State Pencarian Global & Tanggal Aktif Dashboard
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('2026-11-20');
+
+  // 4b. Transisi halaman: currentPage = tujuan (dipakai Navbar/localStorage),
+  //     displayPage = halaman yang benar-benar dirender (berganti setelah animasi keluar)
+  const [displayPage, setDisplayPage] = useState(currentPage);
+  const [pageLeaving, setPageLeaving] = useState(false);
+  const [pageEnter, setPageEnter] = useState(false);
+  const hasUser = !!currentUser;
+
+  useEffect(() => {
+    if (currentPage === displayPage) {
+      setPageLeaving(false);
+      return undefined;
+    }
+    // Tanpa animasi saat login/logout (overlay masih tampil) atau reduced motion
+    if (!hasUser || !appRevealed || prefersReducedMotion()) {
+      setDisplayPage(currentPage);
+      setPageLeaving(false);
+      setPageEnter(false);
+      return undefined;
+    }
+    setPageLeaving(true);
+    const t = setTimeout(() => {
+      setDisplayPage(currentPage);
+      setPageLeaving(false);
+      setPageEnter(true);
+    }, PAGE_EXIT_MS);
+    return () => clearTimeout(t);
+  }, [currentPage, displayPage, hasUser, appRevealed]);
+
+  const pageClass = pageLeaving
+    ? 'page-leaving'
+    : pageEnter && !PAGES_WITH_OWN_ENTER.has(displayPage)
+      ? 'page-entering'
+      : '';
 
   const handleAuthReveal = useCallback(() => setAppRevealed(true), []);
   const handleAuthDone = useCallback(() => setShowAuth(false), []);
@@ -286,10 +328,15 @@ export default function App() {
             />
 
             {/* MAIN CONTENT AREA */}
-            <main id="main-content" tabIndex={-1} className="flex-1 space-y-5 outline-none">
+            <main
+              id="main-content"
+              tabIndex={-1}
+              style={{ '--page-exit-ms': `${PAGE_EXIT_MS}ms` }}
+              className={`flex-1 space-y-5 outline-none ${pageClass}`}
+            >
 
               {/* RENDER HALAMAN SESUAI TAB AKTIF */}
-              {currentPage === 'dashboard' && isOwner && (
+              {displayPage === 'dashboard' && isOwner && (
                 <DashboardPage
                   transactions={transactions}
                   currentUser={currentUser}
@@ -301,7 +348,7 @@ export default function App() {
               )}
 
               {/* Fallback jika Karyawan berada di dashboard */}
-              {currentPage === 'dashboard' && !isOwner && (
+              {displayPage === 'dashboard' && !isOwner && (
                 <TransactionFormPage
                   currentShift={currentUser?.shift}
                   onSaveTransaction={handleSaveTransaction}
@@ -310,7 +357,7 @@ export default function App() {
                 />
               )}
 
-              {currentPage === 'form' && (
+              {displayPage === 'form' && (
                 <TransactionFormPage
                   currentShift={currentUser?.shift}
                   onSaveTransaction={handleSaveTransaction}
@@ -319,7 +366,7 @@ export default function App() {
                 />
               )}
 
-              {currentPage === 'ocr' && (
+              {displayPage === 'ocr' && (
                 <OcrConfirmationPage
                   onConfirmTransaction={(data) => {
                     handleSaveTransaction(data);
@@ -329,7 +376,7 @@ export default function App() {
                 />
               )}
 
-              {currentPage === 'upload' && (
+              {displayPage === 'upload' && (
                 <UploadProofPage
                   transactions={transactions}
                   onUpdateProof={handleUpdateProof}
@@ -337,7 +384,7 @@ export default function App() {
                 />
               )}
 
-              {currentPage === 'history' && (
+              {displayPage === 'history' && (
                 <HistoryPage
                   transactions={transactions}
                   userRole={currentUser.role}
@@ -348,12 +395,12 @@ export default function App() {
               )}
 
               {/* HALAMAN MANAJEMEN PENGGUNA (HANYA UNTUK PEMILIK) */}
-              {currentPage === 'users' && isOwner && (
+              {displayPage === 'users' && isOwner && (
                 <UserManagementPage currentUser={currentUser} />
               )}
 
               {/* Proteksi bila non-owner mencoba mengakses via URL/state */}
-              {currentPage === 'users' && !isOwner && (
+              {displayPage === 'users' && !isOwner && (
                 <div className={`${card} space-y-3 px-6 py-16 text-center`}>
                   <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--cash-out-light)] text-[var(--cash-out)]">
                     <span aria-hidden="true" className="text-lg font-bold">!</span>

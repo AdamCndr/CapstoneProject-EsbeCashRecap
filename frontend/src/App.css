@@ -230,3 +230,47 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* TRANSISI HALAMAN: keluar cepat (ease-in), masuk lebih lambat (ease-out) */
+@keyframes page-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Untuk halaman yang belum punya animasi masuk sendiri */
+.page-entering {
+  animation: page-in 420ms var(--ease-out) backwards;
+}
+
+/* Harus setelah .page-entering agar menang saat keduanya aktif */
+.page-leaving {
+  animation: page-out var(--page-exit-ms, 240ms) cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .page-entering,
+  .page-leaving {
+    animation: none;
+  }
+}
