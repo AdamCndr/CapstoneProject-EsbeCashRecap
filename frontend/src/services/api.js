@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const TOKEN_STORAGE_KEY = 'esbe_access_token';
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'false';
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -53,6 +53,7 @@ export async function loginRequest(username, password) {
         user: {
           id: isOwner ? 'mock-owner-1' : 'mock-staff-1',
           username: username || (isOwner ? 'owner' : 'kasir'),
+          full_name: isOwner ? 'Umar Syafie' : null,
           role: isOwner ? 'owner' : 'staff',
         },
       },

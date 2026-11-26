@@ -58,7 +58,7 @@
   --text-link:         #1D4ED8; /* Teks tautan biru */
 
   /* ========================================================================
-     6. STATUS OPERASIONAL KASIR & ARUS KAS
+     6. STATUS OPERASIONAL KARYAWAN & ARUS KAS
      ======================================================================== */
   --cash-in:           #047857; /* Pemasukan Kas (Emerald 700, kontras 5.48:1 di putih) */
   --cash-in-light:     #ECFDF5; /* Latar badge pemasukan */
@@ -71,7 +71,7 @@
   /* ========================================================================
      7. PRESET GRADIEN KHUSUS (HERO & HEADER NOTCH)
      ======================================================================== */
-  /* Gradien utama banner hero kasir */
+  /* Gradien utama banner hero karyawan */
   --grad-hero: linear-gradient(125deg, #1E3A8A 0%, #1D4ED8 60%, #2563EB 100%);
   
   /* Gradien sayap header notch */

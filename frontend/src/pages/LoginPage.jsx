@@ -130,7 +130,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
       setStoredToken(accessToken);
 
       const userRole = user.role === 'owner' ? 'Pemilik' : 'Karyawan';
-      const displayName = userRole === 'Pemilik' ? `Pemilik (${user.username})` : `Kasir (${user.username})`;
+      const displayName = user.full_name || user.fullName || user.name || user.username;
       const userData = { id: user.id, username: user.username, name: displayName, role: userRole };
 
       if (userRole === 'Pemilik') {
@@ -236,7 +236,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                             setUsername(e.target.value);
                             setDetectedUser(null);
                           }}
-                          placeholder="owner atau kasir"
+                          placeholder="owner atau karyawan"
                           className={`${field} pl-9`}
                         />
                       </div>
@@ -290,12 +290,12 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleQuickFill('kasir', '123456')}
-                      aria-label="Isi cepat akun Karyawan: kasir / 123456"
+                      onClick={() => handleQuickFill('karyawan', '123456')}
+                      aria-label="Isi cepat akun Karyawan: karyawan / 123456"
                       className={chipClass}
                     >
                       <User size={13} className="text-[var(--amber-600)]" aria-hidden="true" />
-                      kasir
+                      karyawan
                     </button>
                   </div>
                 </div>

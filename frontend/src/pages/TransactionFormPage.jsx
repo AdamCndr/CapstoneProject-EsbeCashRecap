@@ -1432,7 +1432,7 @@ export default function TransactionFormPage({
             </div>
 
             <p className="mt-4 text-center text-xs text-[var(--text-muted)]">
-              Transaksi otomatis tersinkronisasi ke penyimpanan lokal kasir.
+              Transaksi otomatis tersinkronisasi ke penyimpanan lokal karyawan.
             </p>
           </section>
         </div>

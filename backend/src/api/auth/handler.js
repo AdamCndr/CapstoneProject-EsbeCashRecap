@@ -33,6 +33,7 @@ class AuthHandler {
           user: {
             id: user.id,
             username: user.username,
+            full_name: user.full_name || null,
             role: user.role,
           },
         },

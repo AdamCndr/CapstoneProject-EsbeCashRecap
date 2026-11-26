@@ -150,7 +150,7 @@ const focusRing =
 const ROLE_OPTIONS = [
   {
     value: 'Karyawan',
-    label: 'Karyawan (Kasir)',
+    label: 'Karyawan',
     Icon: User,
     glow: ['var(--amber-500)', 'var(--amber-400)'],
     active: 'border-transparent bg-[var(--amber-50)] text-[var(--amber-700)]'
@@ -544,7 +544,7 @@ export default function UserManagementPage({ currentUser }) {
                 Manajemen Akun &amp; Akses
               </h1>
               <p className="mt-3 max-w-md text-sm leading-snug text-[color:var(--glass-text-soft)]">
-                Kelola kredensial akun kasir karyawan dan pemilik toko. Halaman ini hanya dapat diakses oleh Owner.
+                Kelola kredensial akun karyawan dan pemilik toko. Halaman ini hanya dapat diakses oleh Owner.
               </p>
             </div>
 
@@ -629,7 +629,7 @@ export default function UserManagementPage({ currentUser }) {
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <User className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
-                  Karyawan / Kasir
+                  Karyawan
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{employeeCount}</p>
                 <div className="mt-auto pt-3">
@@ -657,7 +657,7 @@ export default function UserManagementPage({ currentUser }) {
         <p className="text-sm leading-5 text-[var(--text-muted)]">
           <span className="font-semibold text-[var(--royal-700)]">Proteksi Akun Absolut:</span> Sistem
           memiliki 1 Akun Pemilik Absolut (Master Backup Owner) yang terkunci secara permanen. Anda
-          dapat menambah akun Owner lain maupun kasir, namun akun absolut tidak dapat dihapus demi
+          dapat menambah akun Owner lain maupun karyawan, namun akun absolut tidak dapat dihapus demi
           memastikan toko selalu memiliki akses cadangan jika akun lain bermasalah.
         </p>
       </div>
