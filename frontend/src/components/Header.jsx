@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Download, LogOut, Plus, Search, User, X } from 'lucide-react';
+import { Bell, Check, Download, LogOut, Plus, Search, User, Wallet, X } from 'lucide-react';
 import { useMouseGlow } from '../hooks/useMouseGlow';
 
 const rp = (n) => 'Rp ' + Math.abs(n || 0).toLocaleString('id-ID');
@@ -20,6 +20,10 @@ const WING_IN = 800;
 const WING_OUT = 550;
 const WING_DELAY_IN = 950; // jeda: sayap baru keluar setelah notch benar-benar mendarat
 const NOTCH_DELAY_OUT = 400; // notch menunggu sayap hampir masuk seluruhnya
+const BOX_IN = 500; // mode kotak: tidak ada sayap, jadi gerakannya lebih singkat
+const BOX_OUT = 350;
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
 // Titik shift: versi cerah dari --shift-siang / --shift-pagi agar tetap terlihat di sayap biru.
 const SHIFTS = {
@@ -28,6 +32,10 @@ const SHIFTS = {
 };
 
 const WING_RADIUS = 24; // sama dengan rounded-b-[24px] notch
+// Shadow sayap: tipis selama sayap bergerak, lalu pelan-pelan naik ke kekuatan default
+// setelah sayap selesai keluar.
+const WING_SHADOW_START = 0.35; // kekuatan saat sayap bergerak
+const WING_SHADOW_END = 1; // kekuatan default setelah sayap diam
 // Lebar sayap mengikuti isi: sayap terlebar di satu role menjadi patokan untuk
 // kedua sayap role itu (kiri = kanan), jadi tiap role bisa punya lebar berbeda.
 // WING_PAD = padding kiri + kanan sayap; batas atas menjaga notch + sayap muat di viewport.
@@ -189,7 +197,7 @@ function Flare({ side, color, className = '' }) {
 
 // Bentuk sayap = SATU path (flare luar + bodi + sudut bawah membulat).
 // Ukuran bodi diukur dari elemen sayap.
-function WingShape({ left, w, h, onBlue }) {
+function WingShape({ left, w, h, onBlue, shadow }) {
   if (!w || !h) return null;
   const F = FLARE;
   const R = Math.min(WING_RADIUS, h / 2, w / 2);
@@ -209,15 +217,19 @@ function WingShape({ left, w, h, onBlue }) {
         transform: left ? undefined : 'scaleX(-1)', // sayap kanan = cermin sayap kiri
       }}
     >
+      {/* Lapisan shadow: path yang sama di bawah bodi. drop-shadow mengikuti bentuk melengkung,
+          dan opacity lapisan ini yang mengatur kekuatan shadow. Baru muncul (fade) setelah
+          sayap selesai keluar, dan mati seketika saat sayap mulai masuk. */}
       <path
         d={d}
         style={{
           fill: 'var(--wing)',
-          // drop-shadow mengikuti path melengkung, bukan kotak pembungkus sayap.
           filter: onBlue ? 'var(--shadow-header-light)' : 'var(--shadow-header-dark)',
-          transition: `fill 300ms ${EASE_OUT}, filter 300ms ${EASE_OUT}`,
+          opacity: shadow === 2 ? WING_SHADOW_END : shadow === 1 ? WING_SHADOW_START : 0,
+          transition: `opacity ${shadow === 2 ? 700 : shadow === 1 ? 300 : 150}ms ${EASE_OUT}, filter 300ms ${EASE_OUT}`,
         }}
       />
+      <path d={d} style={{ fill: 'var(--wing)', transition: `fill 300ms ${EASE_OUT}` }} />
     </svg>
   );
 }
@@ -255,6 +267,23 @@ function Wing({ side, open, width, onMeasure, interactive = false, onClick, labe
     return () => ro.disconnect();
   }, []);
   const onBlue = useBlueBehind(ref, open, left);
+
+  // Tahap shadow: 0 = mati (sayap tertutup), 1 = tipis (selama sayap bergerak), 2 = default
+  // (setelah sayap diam). Mati lagi saat sayap masuk kembali.
+  const [shadowStage, setShadowStage] = useState(0);
+  useEffect(() => {
+    if (!open) {
+      setShadowStage(0);
+      return undefined;
+    }
+    if (prefersReducedMotion()) {
+      setShadowStage(2);
+      return undefined;
+    }
+    setShadowStage(1);
+    const t = setTimeout(() => setShadowStage(2), WING_DELAY_IN + WING_IN);
+    return () => clearTimeout(t);
+  }, [open]);
   const props = interactive
     ? { type: 'button', onClick, 'aria-label': label, disabled: !open }
     : {};
@@ -301,7 +330,7 @@ function Wing({ side, open, width, onMeasure, interactive = false, onClick, labe
       >
         {children}
       </span>
-      <WingShape left={left} w={size.w} h={size.h} onBlue={onBlue} />
+      <WingShape left={left} w={size.w} h={size.h} onBlue={onBlue} shadow={shadowStage} />
       <span className="relative flex w-full min-w-0 items-center justify-between gap-3">{children}</span>
     </Tag>
   );
@@ -395,6 +424,12 @@ const HEADER_CSS = `
   from { opacity: 0; transform: translateY(-4px); }
 }
 
+/* Mode kotak: bar turun dulu, lalu isinya menyusul dari sisi masing-masing (stagger lewat --d) */
+.hdr-box-item { animation: hdr-box-in 520ms cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) backwards; }
+@keyframes hdr-box-in {
+  from { opacity: 0; transform: translateX(var(--dx, 0px)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-header-root] *,
   [data-header-root] *::before,
@@ -426,6 +461,13 @@ const TONES = {
     logout:
       'text-[var(--cash-out-light)] hover:bg-white/10 focus-visible:bg-white/10',
     scheme: 'dark',
+    barBorder: 'border-white/10',
+    menuItem: 'text-[var(--text-inverse)] hover:bg-white/10 focus-visible:bg-white/10',
+    menuItemOn: 'bg-white/10',
+    thumb: 'bg-[var(--royal-900)] text-[var(--royal-100)] ring-1 ring-white/15',
+    check: 'text-[var(--royal-100)]',
+    chip: 'bg-white/10 text-[var(--royal-100)]',
+    negative: 'text-[var(--cash-out-light)]',
   },
   light: {
     shell: 'var(--surface-card)',
@@ -448,6 +490,14 @@ const TONES = {
     logout:
       'text-[var(--cash-out)] hover:bg-[var(--cash-out-light)] focus-visible:bg-[var(--cash-out-light)]',
     scheme: 'light',
+    barBorder: 'border-[var(--border-default)]',
+    menuItem:
+      'text-[var(--text-main)] hover:bg-[var(--surface-hover)] focus-visible:bg-[var(--surface-hover)]',
+    menuItemOn: 'bg-[var(--surface-muted)]',
+    thumb: 'bg-[var(--surface-card)] text-[var(--royal-700)] ring-1 ring-[color:var(--border-default)]',
+    check: 'text-[var(--royal-700)]',
+    chip: 'bg-[rgba(29,78,216,0.1)] text-[var(--royal-700)]',
+    negative: 'text-[var(--cash-out)]',
   },
 };
 
@@ -457,12 +507,52 @@ const getInitials = (name) => {
   return name.slice(0, 2).toUpperCase();
 };
 
+// ── Pilihan desain header (dropdown akun) ───────────────────────────────
+const STYLE_KEY = 'header-style';
+const HEADER_STYLES = [
+  { id: 'notch', label: 'Notch', hint: 'Menggantung di tengah' },
+  { id: 'box', label: 'Kotak biasa', hint: 'Bar penuh di atas' },
+];
+const MENU_ITEMS = '[role="menuitem"],[role="menuitemradio"]';
+
+function readStoredStyle() {
+  try {
+    const v = window.localStorage.getItem(STYLE_KEY);
+    return v === 'notch' || v === 'box' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Miniatur layar kecil yang menunjukkan bentuk header. */
+function StyleThumb({ variant }) {
+  return (
+    <svg aria-hidden="true" width="28" height="20" viewBox="0 0 28 20" fill="none">
+      <rect x="0.5" y="0.5" width="27" height="19" rx="3.5" stroke="currentColor" strokeOpacity="0.35" />
+      {variant === 'notch' ? (
+        <path d="M6 1Q10 1 10 5V7Q10 10 13 10H15Q18 10 18 7V5Q18 1 22 1Z" fill="currentColor" />
+      ) : (
+        <path d="M1 3.5A2.5 2.5 0 0 1 3.5 1H24.5A2.5 2.5 0 0 1 27 3.5V8H1Z" fill="currentColor" />
+      )}
+      <rect x="6" y="14" width="16" height="2" rx="1" fill="currentColor" fillOpacity="0.25" />
+    </svg>
+  );
+}
+
 /**
  * Header "notch": menggantung dari tepi atas layar dengan lengkung cekung
  * di kedua sisi atas. Search bar collapse (ikon + "Cari") dan expand saat diklik.
  *
  * Prop `visible` (default true) mengontrol animasi masuk/keluar. Saat mount,
  * header otomatis animasi masuk.
+ *
+ * Desain header bisa dipilih dari dropdown akun:
+ *   - 'notch' : menggantung + sayap kiri/kanan (default)
+ *   - 'box'   : bar persegi penuh lebar layar; info kas & aksi pindah ke dalam bar
+ * Saat ganti gaya, gaya lama keluar dulu (sayap terselip, notch naik / bar naik),
+ * lalu gaya baru masuk dengan animasinya sendiri.
+ * Pilihan disimpan di localStorage. Untuk mengontrol dari luar, pakai
+ * `headerStyle` + `onHeaderStyleChange`.
  */
 export default function Header({
   currentUser,
@@ -475,12 +565,23 @@ export default function Header({
   onAddTransaction,
   ownerStats,
   onExportCSV,
+  headerStyle: headerStyleProp,
+  defaultHeaderStyle = 'notch',
+  onHeaderStyleChange,
   visible = true,
   className = '',
 }) {
   const tone = TONES[toneName] || TONES.dark;
 
   const [expanded, setExpanded] = useState(false);
+  const [styleState, setStyleState] = useState(() => readStoredStyle() ?? defaultHeaderStyle);
+  // Gaya tujuan (pilihan pengguna) vs gaya yang sedang digambar. Saat berganti, gaya lama
+  // keluar dulu dengan animasinya sendiri, baru gaya baru masuk — tanpa potongan kasar.
+  const variant = (headerStyleProp ?? styleState) === 'box' ? 'box' : 'notch';
+  const [rendered, setRendered] = useState(variant);
+  const [swapping, setSwapping] = useState(false);
+  const refocusRef = useRef(false);
+  const isNotch = rendered !== 'box';
   const [showMenu, setShowMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   // Dropdown tetap terpasang selama animasi tutup berjalan
@@ -514,7 +615,53 @@ export default function Header({
     };
   }, []);
 
-  const open = visible && mounted;
+  const open = visible && mounted && !swapping;
+
+  useEffect(() => {
+    if (variant === rendered) {
+      setSwapping(false);
+      return undefined;
+    }
+    if (prefersReducedMotion()) {
+      setRendered(variant);
+      return undefined;
+    }
+    setSwapping(true);
+    // Tunggu animasi keluar gaya lama selesai
+    const exitMs = rendered === 'box' ? BOX_OUT : NOTCH_OUT + NOTCH_DELAY_OUT;
+    const t = setTimeout(() => {
+      setRendered(variant);
+      setSwapping(false);
+    }, exitMs + 30);
+    return () => clearTimeout(t);
+  }, [variant, rendered]);
+
+  // Setelah gaya baru masuk, kembalikan fokus keyboard ke tombol akun
+  useEffect(() => {
+    if (swapping || !refocusRef.current) return undefined;
+    refocusRef.current = false;
+    const id = requestAnimationFrame(() => menuButtonRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(id);
+  }, [swapping]);
+
+  // Sayap baru keluar setelah notch aktif; saat pindah dari mode kotak ke notch,
+  // sayap mulai dari posisi terselip lalu keluar lagi (animasi yang sama seperti saat masuk).
+  const [wingsOn, setWingsOn] = useState(isNotch);
+  useEffect(() => {
+    if (!isNotch) {
+      setWingsOn(false);
+      return undefined;
+    }
+    let id2;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => setWingsOn(true));
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [isNotch]);
+  const wingsOpen = open && wingsOn;
 
   // Tutup dropdown & search saat header disembunyikan
   useEffect(() => {
@@ -555,7 +702,7 @@ export default function Header({
   useEffect(() => {
     if (!showMenu) return undefined;
     const id = requestAnimationFrame(() => {
-      menuRef.current?.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
+      menuRef.current?.querySelector(MENU_ITEMS)?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(id);
   }, [showMenu]);
@@ -580,7 +727,7 @@ export default function Header({
 
   // Navigasi keyboard di dalam dropdown
   const onMenuKeyDown = (e) => {
-    const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+    const items = Array.from(e.currentTarget.querySelectorAll(MENU_ITEMS));
     if (!items.length) return;
     const i = items.indexOf(document.activeElement);
     let next = null;
@@ -612,80 +759,160 @@ export default function Header({
   const showWings = Boolean(currentUser);
   const shift = SHIFTS[currentUser?.shift] || SHIFTS.pagi;
 
+  const chooseStyle = (next) => {
+    setStyleState(next);
+    try {
+      window.localStorage.setItem(STYLE_KEY, next);
+    } catch {
+      /* storage tidak tersedia: pilihan berlaku untuk sesi ini saja */
+    }
+    onHeaderStyleChange?.(next);
+    setShowMenu(false);
+    if (next !== variant) refocusRef.current = true;
+    else menuButtonRef.current?.focus();
+  };
+
+  // Isi info kas & aksi utama: dipakai bersama oleh sayap (notch) dan bar (kotak)
+  const kasNegative = ownerStats?.totalBersih < 0;
+  const kasValue = `${kasNegative ? '−' : ''}${ownerStats?.totalBersih ? rp(ownerStats.totalBersih) : 'Rp 0'}`;
+  const kasLabel = `Kas Bersih: ${kasValue}`;
+  const subLabel = isOwner
+    ? `${ownerStats?.trxCount || 0} transaksi · ${ownerStats?.dateLabel || 'hari ini'}`
+    : `Shift ${shift.label} · ${shift.time}`;
+  const action = isOwner
+    ? {
+      label: 'Ekspor Rekap CSV',
+      aria: 'Ekspor Rekap Kas CSV',
+      onClick: onExportCSV,
+      Icon: Download,
+      iconAnim: 'group-hover:translate-y-0.5',
+    }
+    : onAddTransaction
+      ? {
+        label: 'Catat transaksi baru',
+        aria: 'Catat transaksi baru',
+        onClick: onAddTransaction,
+        Icon: Plus,
+        iconAnim: 'group-hover:rotate-90',
+      }
+      : null;
+
+  const hiddenTransform = 'translateY(calc(-100% - 16px))';
   const headerMotion = open
     ? {
       transform: 'translateY(0)',
       visibility: 'visible',
-      transition: `transform ${NOTCH_IN}ms ${EASE_OUT}, visibility 0s`,
+      transition: `transform ${isNotch ? NOTCH_IN : BOX_IN}ms ${EASE_OUT}, visibility 0s`,
     }
-    : {
-      transform: 'translateY(calc(-100% - 16px))',
-      visibility: 'hidden',
-      // visibility baru berubah setelah gerakan keluar selesai
-      transition: `transform ${NOTCH_OUT}ms ${EASE_IN} ${NOTCH_DELAY_OUT}ms, visibility 0s linear ${NOTCH_OUT + NOTCH_DELAY_OUT
-        }ms`,
-    };
+    : isNotch
+      ? {
+        transform: hiddenTransform,
+        visibility: 'hidden',
+        // visibility baru berubah setelah gerakan keluar selesai
+        transition: `transform ${NOTCH_OUT}ms ${EASE_IN} ${NOTCH_DELAY_OUT}ms, visibility 0s linear ${NOTCH_OUT + NOTCH_DELAY_OUT
+          }ms`,
+      }
+      : {
+        transform: hiddenTransform,
+        visibility: 'hidden',
+        transition: `transform ${BOX_OUT}ms ${EASE_IN}, visibility 0s linear ${BOX_OUT}ms`,
+      };
 
   return (
-    <div data-header-root className={`pointer-events-none sticky top-0 z-40 flex w-full justify-center ${className}`}>
+    <div
+      data-header-root
+      data-variant={isNotch ? 'notch' : 'box'}
+      className={`${isNotch ? 'pointer-events-none flex justify-center' : ''} sticky top-0 z-40 w-full ${className}`}
+    >
       <style>{HEADER_CSS}</style>
       <header
-        className="pointer-events-auto relative max-w-[calc(100vw-3.5rem)] motion-reduce:!transition-none"
+        className={`pointer-events-auto relative motion-reduce:!transition-none ${isNotch ? 'max-w-[calc(100vw-3.5rem)]' : 'w-full'
+          }`}
         style={{ willChange: 'transform', ...headerMotion }}
       >
-        {/* Sayap (di DOM lebih dulu supaya tergambar di bawah notch tengah) */}
-        {showWings && (
-          <Wing side="left" open={open} width={wingW} onMeasure={reportWing}>
+        {/* Sayap — hanya mode notch (di DOM lebih dulu supaya tergambar di bawah notch tengah) */}
+        {isNotch && showWings && (
+          <Wing side="left" open={wingsOpen} width={wingW} onMeasure={reportWing}>
             <span className="min-w-0 leading-tight">
               <span className="block truncate text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">
-                Kas Bersih: {ownerStats?.totalBersih < 0 ? '−' : ''}{ownerStats?.totalBersih ? rp(ownerStats.totalBersih) : 'Rp 0'}
+                {kasLabel}
               </span>
               <span className="block truncate text-xs text-[color:var(--wing-sub)] transition-colors duration-300">
-                {isOwner
-                  ? `${ownerStats?.trxCount || 0} transaksi · ${ownerStats?.dateLabel || 'hari ini'}`
-                  : `Shift ${shift.label} · ${shift.time}`}
+                {subLabel}
               </span>
             </span>
           </Wing>
         )}
 
-        {showWings &&
-          (isOwner ? (
-            <Wing side="right" open={open} width={wingW} onMeasure={reportWing} interactive onClick={onExportCSV} label="Ekspor Rekap Kas CSV">
-              <span className="text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">Ekspor Rekap CSV</span>
-              <GlowChip>
-                <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
-              </GlowChip>
-            </Wing>
-          ) : (
-            onAddTransaction && (
-              <Wing
-                side="right"
-                open={open}
-                width={wingW}
-                onMeasure={reportWing}
-                interactive
-                onClick={onAddTransaction}
-                label="Catat transaksi baru"
-              >
-                <span className="text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">Catat transaksi baru</span>
-                <GlowChip>
-                  <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
-                </GlowChip>
-              </Wing>
-            )
-          ))}
+        {isNotch && showWings && action && (
+          <Wing
+            side="right"
+            open={wingsOpen}
+            width={wingW}
+            onMeasure={reportWing}
+            interactive
+            onClick={action.onClick}
+            label={action.aria}
+          >
+            <span className="text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">{action.label}</span>
+            <GlowChip>
+              <action.Icon className={`h-4 w-4 transition-transform duration-300 ${action.iconAnim}`} />
+            </GlowChip>
+          </Wing>
+        )}
 
-        {/* Lapisan bentuk notch */}
+        {/* Lapisan bentuk: notch (lengkung + flare) atau bar kotak (garis bawah tipis) */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[2]" style={{ filter: tone.shadow }}>
-          <div className="absolute inset-0 rounded-b-[24px]" style={{ background: tone.shell }} />
-          <Flare side="left" color={tone.shell} className="absolute right-full top-0" />
-          <Flare side="right" color={tone.shell} className="absolute left-full top-0" />
+          <div
+            className={`absolute inset-0 ${isNotch ? 'rounded-b-[24px]' : `rounded-b-[20px] border border-t-0 ${tone.barBorder}`}`}
+            style={{ background: tone.shell }}
+          />
+          {isNotch && (
+            <>
+              <Flare side="left" color={tone.shell} className="absolute right-full top-0" />
+              <Flare side="right" color={tone.shell} className="absolute left-full top-0" />
+            </>
+          )}
         </div>
 
         {/* Isi */}
-        <div className="relative z-[3] px-3 pb-3 pt-2.5 sm:px-4">
-          <div className="flex items-center justify-center gap-2 sm:gap-3">
+        <div className={`relative z-[3] ${isNotch ? 'px-3 pb-3 pt-2.5 sm:px-4' : 'px-3 py-3 sm:px-6'}`}>
+          <div className={`flex items-center gap-2 sm:gap-3 ${isNotch ? 'justify-center' : 'justify-end'}`}>
+            {/* Mode kotak: info kas di kiri bar, aksi utama di sisi kanan */}
+            {!isNotch && showWings && (
+              <div
+                className="hdr-box-item mr-auto hidden min-w-0 items-center gap-3 md:flex"
+                style={{ '--dx': '-14px', '--d': '220ms' }}
+              >
+                <span aria-hidden="true" className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone.chip}`}>
+                  <Wallet className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 leading-tight">
+                  <span className={`block text-xs ${tone.role}`}>Kas bersih</span>
+                  <span
+                    className={`block max-w-[16rem] truncate text-[15px] font-semibold tabular-nums ${kasNegative ? tone.negative : tone.name}`}
+                  >
+                    {kasValue}
+                  </span>
+                </span>
+                <span aria-hidden="true" className={`hidden h-7 w-px shrink-0 lg:block ${tone.divider}`} />
+                <span className={`hidden max-w-[16rem] truncate text-xs lg:block ${tone.role}`}>{subLabel}</span>
+              </div>
+            )}
+            {!isNotch && showWings && action && (
+              <div className="hdr-box-item shrink-0" style={{ '--dx': '14px', '--d': '300ms' }}>
+                <button
+                  type="button"
+                  onClick={action.onClick}
+                  aria-label={action.aria}
+                  className={`group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--royal-700)] text-sm font-semibold text-[var(--text-inverse)] ring-1 ring-inset ring-white/15 transition-[transform,filter] duration-200 hover:brightness-110 active:scale-[0.97] md:w-auto md:px-4 ${FOCUS}`}
+                >
+                  <action.Icon className={`h-4 w-4 transition-transform duration-300 ${action.iconAnim}`} />
+                  <span className="hidden md:inline">{action.label}</span>
+                </button>
+              </div>
+            )}
+
             {/* Pencarian: collapse -> expand */}
             <div
               className={`transition-[width] duration-300 ease-out motion-reduce:transition-none ${expanded ? 'w-44 sm:w-72 lg:w-80' : 'w-[5.5rem] sm:w-[7.25rem]'
@@ -821,7 +1048,7 @@ export default function Header({
                   aria-label="Menu akun"
                   data-state={showMenu ? 'open' : 'closed'}
                   onKeyDown={onMenuKeyDown}
-                  className={`hdr-menu absolute right-0 top-full z-50 mt-4 w-60 rounded-[20px] border p-1.5 ${tone.menu}`}
+                  className={`hdr-menu absolute right-0 top-full z-50 w-64 rounded-[20px] border p-1.5 ${isNotch ? 'mt-4' : 'mt-3'} ${tone.menu}`}
                 >
                   <div
                     role="none"
@@ -836,6 +1063,41 @@ export default function Header({
                       {userRole && <span className={`mt-0.5 block text-xs ${tone.role}`}>{userRole}</span>}
                     </span>
                   </div>
+                  <div
+                    role="group"
+                    aria-labelledby="header-style-label"
+                    className="hdr-menu-item px-0.5 pb-0.5 pt-2.5"
+                    style={{ '--i': 1 }}
+                  >
+                    <span id="header-style-label" className={`block px-2.5 pb-1.5 text-xs ${tone.role}`}>
+                      Tampilan header
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {HEADER_STYLES.map((opt) => {
+                        const active = variant === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={active}
+                            onClick={() => chooseStyle(opt.id)}
+                            className={`flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2 text-left text-sm transition-colors duration-200 focus-visible:outline-none ${tone.menuItem} ${active ? tone.menuItemOn : ''}`}
+                          >
+                            <span className={`grid h-8 w-11 shrink-0 place-items-center rounded-lg ${tone.thumb}`}>
+                              <StyleThumb variant={opt.id} />
+                            </span>
+                            <span className="min-w-0 flex-1 leading-tight">
+                              <span className="block font-medium">{opt.label}</span>
+                              <span className={`mt-0.5 block truncate text-xs ${tone.role}`}>{opt.hint}</span>
+                            </span>
+                            {active && <Check aria-hidden="true" className={`h-4 w-4 shrink-0 ${tone.check}`} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {onLogout && <div role="separator" className={`mx-2.5 my-1.5 h-px ${tone.divider}`} />}
                   {onLogout && (
                     <button
                       type="button"
@@ -844,8 +1106,8 @@ export default function Header({
                         setShowMenu(false);
                         onLogout();
                       }}
-                      style={{ '--i': 1 }}
-                      className={`hdr-menu-item group mt-1.5 flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-none ${tone.logout}`}
+                      style={{ '--i': 2 }}
+                      className={`hdr-menu-item group flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-none ${tone.logout}`}
                     >
                       <LogOut className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                       <span>Ganti akun / Keluar</span>
