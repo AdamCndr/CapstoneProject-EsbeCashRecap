@@ -4,6 +4,9 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Check,
+  Eye,
+  EyeOff,
   KeyRound,
   Lock,
   Shield,
@@ -158,6 +161,8 @@ const ROLE_OPTIONS = [
   }
 ];
 
+const MIN_PASSWORD = 6;
+
 const ROLE_FILTERS = [
   ['semua', 'Semua'],
   ['Pemilik', 'Pemilik (Owner)'],
@@ -190,6 +195,7 @@ export default function UserManagementPage({ currentUser }) {
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('Karyawan');
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Notifikasi Feedback
   const [notification, setNotification] = useState(null);
@@ -247,6 +253,7 @@ export default function UserManagementPage({ currentUser }) {
 
   // Modal tambah akun: buka/tutup dengan fade + scale (tetap ter-mount selama animasi keluar)
   const openAddModal = () => {
+    setShowPassword(false);
     clearTimeout(closeTimer.current);
     setIsAddModalOpen(true);
   };
@@ -316,6 +323,10 @@ export default function UserManagementPage({ currentUser }) {
     e.preventDefault();
     if (!newUsername.trim() || !newName.trim() || !newPassword.trim()) {
       showNotify('error', 'Semua kolom formulir wajib diisi.');
+      return;
+    }
+    if (newPassword.length < MIN_PASSWORD) {
+      showNotify('error', `Kata sandi minimal ${MIN_PASSWORD} karakter.`);
       return;
     }
 
@@ -439,6 +450,10 @@ export default function UserManagementPage({ currentUser }) {
     newRole === 'Pemilik'
       ? 'Owner memiliki hak akses ke Dashboard, Laporan Keuangan, & Manajemen Akun.'
       : 'Karyawan hanya memiliki akses ke Pencatatan Pendapatan, OCR, Unggah Bukti, dan Riwayat.';
+
+  const passwordLen = newPassword.length;
+  const passwordOk = passwordLen >= MIN_PASSWORD;
+  const canSubmit = !!newName.trim() && !!newUsername.trim() && passwordOk && !submitting;
 
   const noMotion = prefersReducedMotion();
 
@@ -806,13 +821,13 @@ export default function UserManagementPage({ currentUser }) {
       {isAddModalOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim)] p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4 backdrop-blur-[2px]"
             style={{
               opacity: modalShown ? 1 : 0,
               transition: noMotion ? 'none' : 'opacity 180ms ease'
             }}
             onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeAddModal();
+              if (e.target === e.currentTarget && !submitting) closeAddModal();
             }}
           >
             <div
@@ -820,23 +835,31 @@ export default function UserManagementPage({ currentUser }) {
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
-              className={`${card} w-full max-w-md space-y-5 p-6 shadow-[var(--shadow-popover-lg)]`}
+              className={`${card} flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden !p-0 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.18),0_6px_16px_-6px_rgba(15,23,42,0.10)]`}
               style={{
                 transform: modalShown ? 'none' : 'translateY(8px) scale(0.95)',
                 transition: noMotion ? 'none' : `transform 260ms ${EASE_OUT}`
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
-                <div className="group flex items-center gap-2 text-[var(--royal-700)]">
-                  <UserPlus {...ico} className={iconCls()} />
-                  <h2 id={titleId} className="text-lg font-semibold text-[var(--text-main)]">
-                    Tambah Akun Baru
-                  </h2>
+              <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4">
+                <div className="group flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--royal-50)] text-[var(--royal-700)]">
+                    <UserPlus {...ico} className={iconCls()} />
+                  </span>
+                  <div>
+                    <h2 id={titleId} className="text-lg font-semibold leading-6 text-[var(--text-main)]">
+                      Tambah Akun Baru
+                    </h2>
+                    <p className="mt-0.5 text-xs leading-4 text-[var(--text-muted)]">
+                      Akun langsung aktif setelah disimpan.
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={closeAddModal}
+                  disabled={submitting}
                   className={`${iconBtn} group`}
                   aria-label="Tutup form"
                 >
@@ -844,106 +867,138 @@ export default function UserManagementPage({ currentUser }) {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateUser} className="space-y-4 text-sm">
-                <fieldset disabled={submitting}>
-                  <legend className={label}>Peran / Hak Akses</legend>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ROLE_OPTIONS.map((opt) => {
-                      const active = newRole === opt.value;
-                      const Icon = opt.Icon;
-                      return (
-                        <GlowPill
-                          key={opt.value}
-                          radius="0.75rem"
-                          active={active}
-                          color={opt.glow?.[0]}
-                          color2={opt.glow?.[1]}
-                          className="h-full"
-                        >
-                          <label
-                            className={`group flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${motion} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
-                              ? opt.active
-                              : 'border-[var(--border-default)] bg-[var(--surface-muted)] text-[var(--text-muted)]'
-                              }`}
+              <form onSubmit={handleCreateUser} className="flex min-h-0 flex-1 flex-col text-sm">
+                <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-5">
+                  <fieldset disabled={submitting}>
+                    <legend className={label}>Peran / Hak Akses</legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ROLE_OPTIONS.map((opt) => {
+                        const active = newRole === opt.value;
+                        const Icon = opt.Icon;
+                        return (
+                          <GlowPill
+                            key={opt.value}
+                            radius="0.75rem"
+                            active={active}
+                            color={opt.glow?.[0]}
+                            color2={opt.glow?.[1]}
+                            className="h-full"
                           >
-                            <input
-                              type="radio"
-                              name="new-role"
-                              value={opt.value}
-                              checked={active}
-                              onChange={() => setNewRole(opt.value)}
-                              className="sr-only"
-                            />
-                            <Icon className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
-                            {opt.label}
-                          </label>
-                        </GlowPill>
-                      );
-                    })}
+                            <label
+                              className={`group flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold ${motion} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
+                                ? opt.active
+                                : 'border-[var(--border-default)] bg-[var(--surface-muted)] text-[var(--text-muted)]'
+                                }`}
+                            >
+                              <input
+                                type="radio"
+                                name="new-role"
+                                value={opt.value}
+                                checked={active}
+                                onChange={() => setNewRole(opt.value)}
+                                className="sr-only"
+                              />
+                              <Icon className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                              {opt.label}
+                              {active && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                            </label>
+                          </GlowPill>
+                        );
+                      })}
+                    </div>
+                    <p className={`${hint} rounded-lg bg-[var(--surface-muted)] px-3 py-2`} aria-live="polite">
+                      {roleDescription}
+                    </p>
+                  </fieldset>
+
+                  <div>
+                    <label htmlFor="new-name" className={label}>
+                      Nama Lengkap
+                    </label>
+                    <GlowPill field>
+                      <input
+                        ref={nameRef}
+                        id="new-name"
+                        type="text"
+                        required
+                        autoComplete="off"
+                        placeholder="Contoh: Rian Hidayat"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className={field}
+                      />
+                    </GlowPill>
                   </div>
-                  <p className={hint}>{roleDescription}</p>
-                </fieldset>
 
-                <div>
-                  <label htmlFor="new-name" className={label}>
-                    Nama Lengkap
-                  </label>
-                  <GlowPill field>
-                    <input
-                      ref={nameRef}
-                      id="new-name"
-                      type="text"
-                      required
-                      placeholder="Contoh: Rian Hidayat"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      className={field}
-                    />
-                  </GlowPill>
+                  <div>
+                    <label htmlFor="new-username" className={label}>
+                      Username Akun
+                    </label>
+                    <GlowPill field>
+                      <span className="absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 font-mono text-xs text-[var(--text-muted)]">
+                        @
+                      </span>
+                      <input
+                        id="new-username"
+                        type="text"
+                        required
+                        autoComplete="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        placeholder="rian"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value.replace(/\s/g, '').toLowerCase())}
+                        className={`${field} pl-8 font-mono`}
+                      />
+                    </GlowPill>
+                  </div>
+
+                  <div>
+                    <label htmlFor="new-password" className={label}>
+                      Kata Sandi Sementara
+                    </label>
+                    <GlowPill field className="group">
+                      <KeyRound
+                        {...ico}
+                        className={`pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-[var(--text-muted)] ${ICON_HOVER}`}
+                      />
+                      <input
+                        id="new-password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={MIN_PASSWORD}
+                        autoComplete="new-password"
+                        placeholder={`Minimal ${MIN_PASSWORD} karakter`}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        aria-describedby="new-password-hint"
+                        className={`${field} pr-11 pl-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute top-1/2 right-2 z-[1] inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] outline-none hover:text-[var(--text-main)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)]"
+                        aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff {...ico} /> : <Eye {...ico} />}
+                      </button>
+                    </GlowPill>
+                    <p
+                      id="new-password-hint"
+                      className={`${hint} ${passwordLen > 0 && !passwordOk ? '!text-[var(--cash-out)]' : ''}`}
+                      aria-live="polite"
+                    >
+                      {passwordLen === 0
+                        ? 'Berikan ke pengguna, lalu minta mereka menggantinya.'
+                        : passwordOk
+                          ? 'Panjang kata sandi sudah cukup.'
+                          : `Kurang ${MIN_PASSWORD - passwordLen} karakter lagi.`}
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="new-username" className={label}>
-                    Username Akun
-                  </label>
-                  <GlowPill field>
-                    <span className="absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 font-mono text-xs text-[var(--text-muted)]">
-                      @
-                    </span>
-                    <input
-                      id="new-username"
-                      type="text"
-                      required
-                      placeholder="rian"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      className={`${field} pl-8 font-mono`}
-                    />
-                  </GlowPill>
-                </div>
-
-                <div>
-                  <label htmlFor="new-password" className={label}>
-                    Kata Sandi Sementara
-                  </label>
-                  <GlowPill field className="group">
-                    <KeyRound
-                      {...ico}
-                      className={`pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-[var(--text-muted)] ${ICON_HOVER}`}
-                    />
-                    <input
-                      id="new-password"
-                      type="password"
-                      required
-                      placeholder="Minimal 6 karakter"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className={`${field} pl-10`}
-                    />
-                  </GlowPill>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-3">
+                <div className="flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-muted)] px-6 py-3">
                   <button
                     type="button"
                     onClick={closeAddModal}
@@ -952,7 +1007,7 @@ export default function UserManagementPage({ currentUser }) {
                   >
                     Batal
                   </button>
-                  <button type="submit" disabled={submitting} className={btnPrimary}>
+                  <button type="submit" disabled={!canSubmit} className={btnPrimary}>
                     {submitting ? 'Menyimpan...' : 'Simpan Akun'}
                   </button>
                 </div>
