@@ -5,31 +5,6 @@ import PayloadTooLargeError from '../../exceptions/PayloadTooLargeError.js';
 import { MAX_PROOF_FILE_BYTES } from '../../validator/transactions/index.js';
 
 /**
- * Membaca stream file upload menjadi Buffer sambil membatasi ukuran maksimal.
- */
-async function readStreamWithLimit(stream, maxBytes) {
-  const chunks = [];
-  let totalBytes = 0;
-
-  for await (const chunk of stream) {
-    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    totalBytes += buf.length;
-
-    if (totalBytes > maxBytes) {
-      throw new PayloadTooLargeError(
-        'Ukuran file bukti melebihi batas maksimal 5 MB',
-        'FILE_TOO_LARGE',
-        { maxBytes },
-      );
-    }
-
-    chunks.push(buf);
-  }
-
-  return Buffer.concat(chunks);
-}
-
-/**
  * Menentukan shift default berdasarkan jam lokal WIB.
  */
 function inferCurrentShift() {
@@ -178,6 +153,8 @@ function buildMockExtractPayload({ scenario, shift, paymentMethod, proofMeta }) 
 
 /**
  * Handler endpoint transaksi (CRUD + mock extract).
+ * Versi Express — req.user menggantikan request.auth.credentials Hapi.
+ * req.file (dari multer) menggantikan request.payload.file (Hapi stream).
  */
 class TransactionsHandler {
   /**
@@ -187,7 +164,6 @@ class TransactionsHandler {
     this._service = service;
     this._validator = validator;
 
-    // Bind semua method
     this.postExtractTransactionHandler = this.postExtractTransactionHandler.bind(this);
     this.postCashTransactionHandler = this.postCashTransactionHandler.bind(this);
     this.postConfirmTransactionHandler = this.postConfirmTransactionHandler.bind(this);
@@ -198,149 +174,186 @@ class TransactionsHandler {
   }
 
   /* ================================================================
-   * POST /transactions/extract  (mock — sudah ada)
+   * POST /transactions/extract  (mock)
+   * Menerima multipart/form-data via multer (req.file + req.body).
    * ================================================================ */
-  async postExtractTransactionHandler(request, h) {
-    const payload = request.payload || {};
-    const { shift, payment_method: paymentMethod, mock_scenario: mockScenario } =
-      this._validator.validateExtractMetadata(payload);
+  async postExtractTransactionHandler(req, res, next) {
+    try {
+      // Metadata dari form-data fields
+      const { shift, payment_method: paymentMethod, mock_scenario: mockScenario } =
+        this._validator.validateExtractMetadata(req.body);
 
-    const { filename, mimeType } = this._validator.validateProofFileStream(payload.file);
-    const buffer = await readStreamWithLimit(payload.file, MAX_PROOF_FILE_BYTES);
+      // Validasi file — req.file di-set oleh multer middleware
+      const { filename, mimeType, buffer } = this._validator.validateProofFile(req.file);
 
-    if (buffer.length === 0) {
-      throw new InvariantError('File gambar bukti kosong atau tidak valid', 'INVALID_IMAGE', {
-        fields: [{ field: 'file', message: 'File tidak boleh kosong (0 byte)' }],
+      if (buffer.length === 0) {
+        throw new InvariantError('File gambar bukti kosong atau tidak valid', 'INVALID_IMAGE', {
+          fields: [{ field: 'file', message: 'File tidak boleh kosong (0 byte)' }],
+        });
+      }
+
+      if (buffer.length > MAX_PROOF_FILE_BYTES) {
+        throw new PayloadTooLargeError(
+          'Ukuran file bukti melebihi batas maksimal 5 MB',
+          'FILE_TOO_LARGE',
+          { maxBytes: MAX_PROOF_FILE_BYTES },
+        );
+      }
+
+      const sha256Hash = crypto.createHash('sha256').update(buffer).digest('hex');
+      const ext = path.extname(filename) || '.jpg';
+      const proofMeta = {
+        proof_id: 501,
+        storage_key: `proofs/2026/11/25/mock-proof-${sha256Hash.slice(0, 8)}${ext}`,
+        original_filename: filename,
+        mime_type: mimeType,
+        file_size: buffer.length,
+        sha256_hash: sha256Hash,
+      };
+
+      const mockResult = buildMockExtractPayload({
+        scenario: mockScenario, shift, paymentMethod, proofMeta,
       });
+
+      return res.status(200).json({
+        status: 'success',
+        message: mockResult.message,
+        data: mockResult.data,
+      });
+    } catch (err) {
+      return next(err);
     }
-
-    const sha256Hash = crypto.createHash('sha256').update(buffer).digest('hex');
-    const ext = path.extname(filename) || '.jpg';
-    const proofMeta = {
-      proof_id: 501,
-      storage_key: `proofs/2026/11/25/mock-proof-${sha256Hash.slice(0, 8)}${ext}`,
-      original_filename: filename,
-      mime_type: mimeType,
-      file_size: buffer.length,
-      sha256_hash: sha256Hash,
-    };
-
-    const mockResult = buildMockExtractPayload({
-      scenario: mockScenario, shift, paymentMethod, proofMeta,
-    });
-
-    return h.response({
-      status: 'success',
-      message: mockResult.message,
-      data: mockResult.data,
-    }).code(200);
   }
 
   /* ================================================================
    * POST /transactions/cash
    * ================================================================ */
-  async postCashTransactionHandler(request, h) {
-    const validated = this._validator.validateCashTransaction(request.payload);
-    const user = request.auth.credentials;
+  async postCashTransactionHandler(req, res, next) {
+    try {
+      const validated = this._validator.validateCashTransaction(req.body);
+      const user = req.user;
 
-    const { transaction, isIdempotent } = await this._service.createTransaction(
-      { ...validated, payment_method: 'tunai' },
-      user,
-    );
+      const { transaction, isIdempotent } = await this._service.createTransaction(
+        { ...validated, payment_method: 'tunai' },
+        user,
+      );
 
-    const statusCode = isIdempotent ? 200 : 201;
-    const message = isIdempotent
-      ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
-      : 'Transaksi tunai berhasil disimpan';
+      const statusCode = isIdempotent ? 200 : 201;
+      const message = isIdempotent
+        ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
+        : 'Transaksi tunai berhasil disimpan';
 
-    return h.response({
-      status: 'success',
-      message,
-      data: { transaction },
-    }).code(statusCode);
+      return res.status(statusCode).json({
+        status: 'success',
+        message,
+        data: { transaction },
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /* ================================================================
    * POST /transactions  (konfirmasi / simpan)
    * ================================================================ */
-  async postConfirmTransactionHandler(request, h) {
-    const validated = this._validator.validateConfirmTransaction(request.payload);
-    const user = request.auth.credentials;
+  async postConfirmTransactionHandler(req, res, next) {
+    try {
+      const validated = this._validator.validateConfirmTransaction(req.body);
+      const user = req.user;
 
-    const { transaction, isIdempotent } = await this._service.createTransaction(validated, user);
+      const { transaction, isIdempotent } = await this._service.createTransaction(validated, user);
 
-    const statusCode = isIdempotent ? 200 : 201;
-    const message = isIdempotent
-      ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
-      : 'Transaksi berhasil disimpan';
+      const statusCode = isIdempotent ? 200 : 201;
+      const message = isIdempotent
+        ? 'Transaksi sudah tercatat sebelumnya (idempotent)'
+        : 'Transaksi berhasil disimpan';
 
-    return h.response({
-      status: 'success',
-      message,
-      data: { transaction },
-    }).code(statusCode);
+      return res.status(statusCode).json({
+        status: 'success',
+        message,
+        data: { transaction },
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /* ================================================================
    * GET /transactions
    * ================================================================ */
-  async getTransactionsHandler(request, h) {
-    const filters = this._validator.validateTransactionQuery(request.query);
-    const user = request.auth.credentials;
+  async getTransactionsHandler(req, res, next) {
+    try {
+      const filters = this._validator.validateTransactionQuery(req.query);
+      const user = req.user;
 
-    const result = await this._service.getTransactions(filters, user);
+      const result = await this._service.getTransactions(filters, user);
 
-    return h.response({
-      status: 'success',
-      data: result,
-    }).code(200);
+      return res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /* ================================================================
-   * GET /transactions/{id}
+   * GET /transactions/:id
    * ================================================================ */
-  async getTransactionByIdHandler(request, h) {
-    const { id } = request.params;
-    const user = request.auth.credentials;
+  async getTransactionByIdHandler(req, res, next) {
+    try {
+      const { id } = req.params;
+      const user = req.user;
 
-    const transaction = await this._service.getTransactionById(Number(id), user);
+      const transaction = await this._service.getTransactionById(Number(id), user);
 
-    return h.response({
-      status: 'success',
-      data: { transaction },
-    }).code(200);
+      return res.status(200).json({
+        status: 'success',
+        data: { transaction },
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /* ================================================================
-   * PATCH /transactions/{id}  (owner only)
+   * PATCH /transactions/:id  (owner only)
    * ================================================================ */
-  async patchTransactionHandler(request, h) {
-    const { id } = request.params;
-    const validated = this._validator.validateUpdateTransaction(request.payload);
-    const user = request.auth.credentials;
+  async patchTransactionHandler(req, res, next) {
+    try {
+      const { id } = req.params;
+      const validated = this._validator.validateUpdateTransaction(req.body);
+      const user = req.user;
 
-    const transaction = await this._service.updateTransaction(Number(id), validated, user);
+      const transaction = await this._service.updateTransaction(Number(id), validated, user);
 
-    return h.response({
-      status: 'success',
-      message: 'Transaksi berhasil diperbarui',
-      data: { transaction },
-    }).code(200);
+      return res.status(200).json({
+        status: 'success',
+        message: 'Transaksi berhasil diperbarui',
+        data: { transaction },
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /* ================================================================
-   * DELETE /transactions/{id}  (owner only)
+   * DELETE /transactions/:id  (owner only)
    * ================================================================ */
-  async deleteTransactionHandler(request, h) {
-    const { id } = request.params;
-    const user = request.auth.credentials;
+  async deleteTransactionHandler(req, res, next) {
+    try {
+      const { id } = req.params;
+      const user = req.user;
 
-    await this._service.deleteTransaction(Number(id), user);
+      await this._service.deleteTransaction(Number(id), user);
 
-    return h.response({
-      status: 'success',
-      message: 'Transaksi berhasil dihapus',
-    }).code(200);
+      return res.status(200).json({
+        status: 'success',
+        message: 'Transaksi berhasil dihapus',
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 }
 

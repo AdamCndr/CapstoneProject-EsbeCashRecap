@@ -1,13 +1,8 @@
 /**
  * Handler endpoint ringkasan dashboard pemilik (khusus role owner).
+ * Versi Express.
  */
 class DashboardHandler {
-  /**
-   * @param {{
-   *   service: import('../../services/DashboardService.js').default,
-   *   validator: import('../../validator/recap/index.js').default,
-   * }} deps
-   */
   constructor({ service, validator }) {
     this._service = service;
     this._validator = validator;
@@ -18,16 +13,18 @@ class DashboardHandler {
   /**
    * GET /dashboard/summary
    */
-  async getDashboardSummaryHandler(request, h) {
-    const { date } = this._validator.validateDashboardQuery(request.query);
-    const data = await this._service.getDashboardSummary({ date });
+  async getDashboardSummaryHandler(req, res, next) {
+    try {
+      const { date } = this._validator.validateDashboardQuery(req.query);
+      const data = await this._service.getDashboardSummary({ date });
 
-    return h
-      .response({
+      return res.status(200).json({
         status: 'success',
         data,
-      })
-      .code(200);
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 }
 

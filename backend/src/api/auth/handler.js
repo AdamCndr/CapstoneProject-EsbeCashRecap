@@ -1,5 +1,6 @@
 /**
  * Handler endpoint autentikasi (login, profil token saat ini, dan pengecekan akses owner).
+ * Versi Express — menggantikan Hapi handler.
  */
 class AuthHandler {
   /**
@@ -19,13 +20,13 @@ class AuthHandler {
    * POST /auth/login
    * Memvalidasi payload, memverifikasi kredensial bcrypt, dan mengembalikan JWT + profil ringkas user.
    */
-  async postLoginHandler(request, h) {
-    const { username, password } = this._validator.validateLoginPayload(request.payload);
-    const user = await this._service.verifyUserCredential(username, password);
-    const accessToken = this._tokenManager.generateAccessToken(user);
+  async postLoginHandler(req, res, next) {
+    try {
+      const { username, password } = this._validator.validateLoginPayload(req.body);
+      const user = await this._service.verifyUserCredential(username, password);
+      const accessToken = this._tokenManager.generateAccessToken(user);
 
-    return h
-      .response({
+      return res.status(200).json({
         status: 'success',
         message: 'Login berhasil',
         data: {
@@ -37,19 +38,21 @@ class AuthHandler {
             role: user.role,
           },
         },
-      })
-      .code(200);
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /**
    * GET /auth/me
-   * Mengembalikan data user terautentikasi dari payload JWT.
+   * Mengembalikan data user terautentikasi dari payload JWT (di-set oleh middleware authenticate).
    */
-  async getMeHandler(request, h) {
-    const { id, username, full_name, role } = request.auth.credentials;
+  async getMeHandler(req, res, next) {
+    try {
+      const { id, username, full_name, role } = req.user;
 
-    return h
-      .response({
+      return res.status(200).json({
         status: 'success',
         data: {
           user: {
@@ -59,30 +62,30 @@ class AuthHandler {
             role,
           },
         },
-      })
-      .code(200);
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 
   /**
    * GET /auth/owner-only
    * Endpoint verifikasi otorisasi khusus role owner.
    */
-  async getOwnerOnlyHandler(request, h) {
-    const { id, username, role } = request.auth.credentials;
+  async getOwnerOnlyHandler(req, res, next) {
+    try {
+      const { id, username, role } = req.user;
 
-    return h
-      .response({
+      return res.status(200).json({
         status: 'success',
         message: 'Akses owner terverifikasi',
         data: {
-          user: {
-            id,
-            username,
-            role,
-          },
+          user: { id, username, role },
         },
-      })
-      .code(200);
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 }
 

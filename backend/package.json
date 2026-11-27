@@ -1,7 +1,7 @@
 {
   "name": "esbe-cash-recap-backend",
   "version": "1.0.0",
-  "description": "Backend API pencatatan dan rekapitulasi pendapatan Fotocopy Esbe Lampu Merah",
+  "description": "Backend API pencatatan dan rekapitulasi pendapatan Fotocopy Esbe Lampu Merah (Express + Vercel)",
   "main": "src/server.js",
   "type": "module",
   "engines": {
@@ -17,24 +17,28 @@
     "test:recap": "vitest run"
   },
   "keywords": [
-    "hapi",
+    "express",
     "postgresql",
     "neon",
+    "vercel",
     "esbe-cash-recap"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hapi/hapi": "^21.4.13",
-    "@hapi/jwt": "^3.2.4",
     "axios": "^1.21.1",
     "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
     "dotenv": "^18.0.10",
+    "express": "^4.21.2",
     "joi": "^18.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
+    "supertest": "^7.3.2",
     "vitest": "^4.1.12"
   }
 }

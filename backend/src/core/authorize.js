@@ -30,32 +30,35 @@ export function hasAllowedRole(userRole, allowedRoles) {
 }
 
 /**
- * Factory Hapi pre-handler untuk membatasi akses route berdasarkan role.
- * Contoh penggunaan pada route:
- *   options: { auth: 'esbe_jwt', pre: [{ method: requireRole('owner') }] }
+ * Factory Express middleware untuk membatasi akses route berdasarkan role.
+ *
+ * Contoh penggunaan:
+ *   router.get('/recap', authenticate, requireRole('owner'), handler);
  *
  * @param {...string} allowedRoles - Daftar role yang diizinkan mengakses endpoint.
- * @returns {(request: import('@hapi/hapi').Request, h: import('@hapi/hapi').ResponseToolkit) => symbol}
+ * @returns {import('express').RequestHandler}
  */
 export function requireRole(...allowedRoles) {
-  return (request, h) => {
-    const credentials = request.auth?.credentials;
+  return (req, res, next) => {
+    const credentials = req.user;
 
     if (!credentials || !credentials.role) {
-      throw new AuthenticationError('Autentikasi diperlukan', 'UNAUTHORIZED');
+      return next(new AuthenticationError('Autentikasi diperlukan', 'UNAUTHORIZED'));
     }
 
     if (!hasAllowedRole(credentials.role, allowedRoles)) {
-      throw new AuthorizationError(
-        'Anda tidak memiliki hak akses untuk fitur ini',
-        'FORBIDDEN',
-        {
-          requiredRoles: allowedRoles,
-          currentRole: credentials.role,
-        },
+      return next(
+        new AuthorizationError(
+          'Anda tidak memiliki hak akses untuk fitur ini',
+          'FORBIDDEN',
+          {
+            requiredRoles: allowedRoles,
+            currentRole: credentials.role,
+          },
+        ),
       );
     }
 
-    return h.continue;
+    return next();
   };
 }

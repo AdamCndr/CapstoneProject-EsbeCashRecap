@@ -1,9 +1,10 @@
 import { after, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import Jwt from '@hapi/jwt';
+import jwt from 'jsonwebtoken';
+import request from 'supertest';
 import config from '../src/core/config.js';
 import { pool } from '../src/core/database.js';
-import { createServer } from '../src/server.js';
+import { createApp } from '../src/server.js';
 import TokenManager from '../src/tokenize/TokenManager.js';
 
 describe('Authentication & Authorization API', () => {
@@ -12,19 +13,17 @@ describe('Authentication & Authorization API', () => {
   });
 
   it('POST /auth/login berhasil untuk owner dan mengembalikan accessToken + user (id, username, role)', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const response = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: {
+    const response = await request(app)
+      .post('/auth/login')
+      .send({
         username: 'owner',
         password: 'owner123',
-      },
-    });
+      });
 
-    assert.equal(response.statusCode, 200);
-    const body = response.result;
+    assert.equal(response.status, 200);
+    const { body } = response;
     assert.equal(body.status, 'success');
     assert.ok(body.data.accessToken);
     assert.equal(typeof body.data.user.id, 'number');
@@ -40,19 +39,17 @@ describe('Authentication & Authorization API', () => {
   });
 
   it('POST /auth/login mengembalikan 400 dengan pesan Joi jelas saat username/password kosong', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const response = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: {
+    const response = await request(app)
+      .post('/auth/login')
+      .send({
         username: '',
         password: '',
-      },
-    });
+      });
 
-    assert.equal(response.statusCode, 400);
-    const body = response.result;
+    assert.equal(response.status, 400);
+    const { body } = response;
     assert.equal(body.error.code, 'VALIDATION_ERROR');
     assert.match(body.error.message, /Username tidak boleh kosong/);
     assert.match(body.error.message, /Password tidak boleh kosong/);
@@ -61,167 +58,135 @@ describe('Authentication & Authorization API', () => {
   });
 
   it('POST /auth/login mengembalikan 401 dengan pesan generik saat username atau password salah', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const wrongUserRes = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: {
+    const wrongUserRes = await request(app)
+      .post('/auth/login')
+      .send({
         username: 'tidak_ada',
         password: 'owner123',
-      },
-    });
+      });
 
-    const wrongPassRes = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: {
+    const wrongPassRes = await request(app)
+      .post('/auth/login')
+      .send({
         username: 'owner',
         password: 'salah_password',
-      },
-    });
+      });
 
-    assert.equal(wrongUserRes.statusCode, 401);
-    assert.equal(wrongPassRes.statusCode, 401);
-    assert.deepEqual(wrongUserRes.result, wrongPassRes.result);
-    assert.equal(wrongUserRes.result.error.code, 'INVALID_CREDENTIALS');
-    assert.equal(wrongUserRes.result.error.message, 'Username atau password salah');
+    assert.equal(wrongUserRes.status, 401);
+    assert.equal(wrongPassRes.status, 401);
+    assert.deepEqual(wrongUserRes.body, wrongPassRes.body);
+    assert.equal(wrongUserRes.body.error.code, 'INVALID_CREDENTIALS');
+    assert.equal(wrongUserRes.body.error.message, 'Username atau password salah');
   });
 
   it('POST /auth/login mengembalikan 403 saat akun berstatus non-aktif', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const response = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: {
+    const response = await request(app)
+      .post('/auth/login')
+      .send({
         username: 'nonaktif',
         password: 'nonaktif123',
-      },
-    });
+      });
 
-    assert.equal(response.statusCode, 403);
-    assert.equal(response.result.error.code, 'ACCOUNT_INACTIVE');
-    assert.match(response.result.error.message, /non-aktif/i);
+    assert.equal(response.status, 403);
+    assert.equal(response.body.error.code, 'ACCOUNT_INACTIVE');
+    assert.match(response.body.error.message, /non-aktif/i);
   });
 
   it('GET /auth/me mengembalikan data user dari token valid dan 401 jika tanpa/salah token', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const noTokenRes = await server.inject({
-      method: 'GET',
-      url: '/auth/me',
-    });
-    assert.equal(noTokenRes.statusCode, 401);
-    assert.equal(noTokenRes.result.error.code, 'UNAUTHORIZED');
-    assert.ok('details' in noTokenRes.result.error);
+    const noTokenRes = await request(app).get('/auth/me');
+    assert.equal(noTokenRes.status, 401);
+    assert.equal(noTokenRes.body.error.code, 'UNAUTHORIZED');
+    assert.ok('details' in noTokenRes.body.error);
 
-    const expiredToken = Jwt.token.generate(
+    const expiredToken = jwt.sign(
       { id: 1, username: 'owner', role: 'owner', exp: Math.floor(Date.now() / 1000) - 10 },
       config.jwt.secret,
     );
-    const expiredRes = await server.inject({
-      method: 'GET',
-      url: '/auth/me',
-      headers: {
-        authorization: `Bearer ${expiredToken}`,
-      },
-    });
-    assert.equal(expiredRes.statusCode, 401);
+    const expiredRes = await request(app)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${expiredToken}`);
+    assert.equal(expiredRes.status, 401);
 
-    const loginRes = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { username: 'employee', password: 'employee123' },
-    });
-    const { accessToken, user } = loginRes.result.data;
+    const loginRes = await request(app)
+      .post('/auth/login')
+      .send({ username: 'employee', password: 'employee123' });
+    const { accessToken, user } = loginRes.body.data;
 
-    const meRes = await server.inject({
-      method: 'GET',
-      url: '/auth/me',
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-      },
-    });
-    assert.equal(meRes.statusCode, 200);
-    assert.deepEqual(meRes.result.data.user, user);
+    const meRes = await request(app)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`);
+    assert.equal(meRes.status, 200);
+    assert.deepEqual(meRes.body.data.user, user);
   });
 
   it('requireRole("owner") mengizinkan owner (200) dan menolak employee (403)', async () => {
-    const server = await createServer();
+    const app = createApp();
 
-    const ownerLogin = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { username: 'owner', password: 'owner123' },
-    });
-    const employeeLogin = await server.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { username: 'employee', password: 'employee123' },
-    });
+    const ownerLogin = await request(app)
+      .post('/auth/login')
+      .send({ username: 'owner', password: 'owner123' });
+    const employeeLogin = await request(app)
+      .post('/auth/login')
+      .send({ username: 'employee', password: 'employee123' });
 
-    const ownerAccess = await server.inject({
-      method: 'GET',
-      url: '/auth/owner-only',
-      headers: { authorization: `Bearer ${ownerLogin.result.data.accessToken}` },
-    });
-    assert.equal(ownerAccess.statusCode, 200);
-    assert.equal(ownerAccess.result.data.user.role, 'owner');
+    const ownerAccess = await request(app)
+      .get('/auth/owner-only')
+      .set('Authorization', `Bearer ${ownerLogin.body.data.accessToken}`);
+    assert.equal(ownerAccess.status, 200);
+    assert.equal(ownerAccess.body.data.user.role, 'owner');
 
-    const employeeAccess = await server.inject({
-      method: 'GET',
-      url: '/auth/owner-only',
-      headers: { authorization: `Bearer ${employeeLogin.result.data.accessToken}` },
-    });
-    assert.equal(employeeAccess.statusCode, 403);
-    assert.equal(employeeAccess.result.error.code, 'FORBIDDEN');
-    assert.deepEqual(employeeAccess.result.error.details, {
+    const employeeAccess = await request(app)
+      .get('/auth/owner-only')
+      .set('Authorization', `Bearer ${employeeLogin.body.data.accessToken}`);
+    assert.equal(employeeAccess.status, 403);
+    assert.equal(employeeAccess.body.error.code, 'FORBIDDEN');
+    assert.deepEqual(employeeAccess.body.error.details, {
       requiredRoles: ['owner'],
       currentRole: 'employee',
     });
   });
 
   it('Rate limit POST /auth/login mengembalikan 429 ketika batas percobaan terlampaui', async () => {
-    const server = await createServer({
+    const app = createApp({
       rateLimiterOptions: { windowMs: 60000, maxAttempts: 2 },
     });
 
-    const req = {
-      method: 'POST',
-      url: '/auth/login',
-      payload: { username: 'owner', password: 'salah' },
-      headers: { 'x-forwarded-for': '203.0.113.10' },
-    };
+    const sendAttempt = () =>
+      request(app)
+        .post('/auth/login')
+        .set('x-forwarded-for', '203.0.113.10')
+        .send({ username: 'owner', password: 'salah' });
 
-    const res1 = await server.inject(req);
-    const res2 = await server.inject(req);
-    const res3 = await server.inject(req);
+    const res1 = await sendAttempt();
+    const res2 = await sendAttempt();
+    const res3 = await sendAttempt();
 
-    assert.equal(res1.statusCode, 401);
-    assert.equal(res2.statusCode, 401);
-    assert.equal(res3.statusCode, 429);
-    assert.equal(res3.result.error.code, 'RATE_LIMIT_EXCEEDED');
-    assert.ok(res3.result.error.details.retryAfterSeconds >= 1);
+    assert.equal(res1.status, 401);
+    assert.equal(res2.status, 401);
+    assert.equal(res3.status, 429);
+    assert.equal(res3.body.error.code, 'RATE_LIMIT_EXCEEDED');
+    assert.ok(res3.body.error.details.retryAfterSeconds >= 1);
   });
 
   it('CORS membatasi origin sesuai CORS_ORIGINS', async () => {
-    const server = await createServer({
+    const app = createApp({
       corsOrigins: ['http://localhost:5173'],
     });
 
-    const allowedRes = await server.inject({
-      method: 'GET',
-      url: '/health',
-      headers: { origin: 'http://localhost:5173' },
-    });
+    const allowedRes = await request(app)
+      .get('/health')
+      .set('Origin', 'http://localhost:5173');
     assert.equal(allowedRes.headers['access-control-allow-origin'], 'http://localhost:5173');
 
-    const blockedRes = await server.inject({
-      method: 'GET',
-      url: '/health',
-      headers: { origin: 'https://evil.example.com' },
-    });
+    const blockedRes = await request(app)
+      .get('/health')
+      .set('Origin', 'https://evil.example.com');
     assert.equal(blockedRes.headers['access-control-allow-origin'], undefined);
   });
 });

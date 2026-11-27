@@ -9,7 +9,7 @@ import {
   TransactionQuerySchema,
 } from './schema.js';
 
-export const MAX_PROOF_FILE_BYTES = 5 * 1024 * 1024;
+export const MAX_PROOF_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const ALLOWED_PROOF_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_PROOF_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -44,20 +44,24 @@ const TransactionsValidator = {
   /**
    * Validasi metadata POST /transactions/extract (mock).
    */
-  validateExtractMetadata(payload) {
+  validateExtractMetadata(body) {
     const metadata = {
-      shift: payload?.shift || undefined,
-      payment_method: payload?.payment_method || undefined,
-      mock_scenario: payload?.mock_scenario || undefined,
+      shift: body?.shift || undefined,
+      payment_method: body?.payment_method || undefined,
+      mock_scenario: body?.mock_scenario || undefined,
     };
     return runValidation(ExtractTransactionMetadataSchema, metadata);
   },
 
   /**
-   * Validasi file stream bukti pembayaran.
+   * Validasi file upload dari multer (req.file).
+   * Menggantikan validateProofFileStream yang bergantung pada Hapi stream object.
+   *
+   * @param {Express.Multer.File | undefined} file - Object req.file dari multer.
+   * @returns {{ filename: string, mimeType: string, buffer: Buffer }}
    */
-  validateProofFileStream(fileStream) {
-    if (!fileStream || typeof fileStream.on !== 'function' || !fileStream.hapi) {
+  validateProofFile(file) {
+    if (!file) {
       throw new InvariantError(
         'File bukti pembayaran wajib diunggah pada field "file"',
         'VALIDATION_ERROR',
@@ -67,9 +71,8 @@ const TransactionsValidator = {
       );
     }
 
-    const filename = fileStream.hapi.filename || 'unknown';
-    const rawMime = fileStream.hapi.headers?.['content-type'] || '';
-    const mimeType = rawMime.split(';')[0].trim().toLowerCase();
+    const filename = file.originalname || 'unknown';
+    const mimeType = (file.mimetype || '').split(';')[0].trim().toLowerCase();
     const ext = path.extname(filename).toLowerCase();
 
     const isMimeAllowed = ALLOWED_PROOF_MIME_TYPES.includes(mimeType);
@@ -86,7 +89,7 @@ const TransactionsValidator = {
       );
     }
 
-    return { filename, mimeType };
+    return { filename, mimeType, buffer: file.buffer };
   },
 
   /**
@@ -103,7 +106,6 @@ const TransactionsValidator = {
   validateConfirmTransaction(payload) {
     const value = runValidation(ConfirmTransactionSchema, payload);
 
-    // Aturan bisnis: non-tunai wajib bukti atau is_manual_input
     if (value.payment_method !== 'tunai') {
       if (!value.payment_proof_id && !value.is_manual_input) {
         throw new InvariantError(
@@ -123,7 +125,7 @@ const TransactionsValidator = {
   },
 
   /**
-   * Validasi PATCH /transactions/{id} — update transaksi.
+   * Validasi PATCH /transactions/:id — update transaksi.
    */
   validateUpdateTransaction(payload) {
     return runValidation(UpdateTransactionSchema, payload);

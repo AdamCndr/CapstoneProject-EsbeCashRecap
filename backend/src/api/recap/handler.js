@@ -1,13 +1,8 @@
 /**
  * Handler endpoint rekapitulasi transaksi (khusus role owner).
+ * Versi Express.
  */
 class RecapHandler {
-  /**
-   * @param {{
-   *   service: import('../../services/RecapService.js').default,
-   *   validator: import('../../validator/recap/index.js').default,
-   * }} deps
-   */
   constructor({ service, validator }) {
     this._service = service;
     this._validator = validator;
@@ -18,16 +13,18 @@ class RecapHandler {
   /**
    * GET /recap?date_from&date_to&group_by=date,shift,method
    */
-  async getRecapHandler(request, h) {
-    const { dateFrom, dateTo, groupBy } = this._validator.validateRecapQuery(request.query);
-    const data = await this._service.getRecap({ dateFrom, dateTo, groupBy });
+  async getRecapHandler(req, res, next) {
+    try {
+      const { dateFrom, dateTo, groupBy } = this._validator.validateRecapQuery(req.query);
+      const data = await this._service.getRecap({ dateFrom, dateTo, groupBy });
 
-    return h
-      .response({
+      return res.status(200).json({
         status: 'success',
         data,
-      })
-      .code(200);
+      });
+    } catch (err) {
+      return next(err);
+    }
   }
 }
 

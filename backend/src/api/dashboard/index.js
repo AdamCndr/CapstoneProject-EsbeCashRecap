@@ -1,16 +1,22 @@
+import { Router } from 'express';
 import DashboardHandler from './handler.js';
-import routes from './routes.js';
+import { authenticate } from '../../core/authenticate.js';
+import { requireRole } from '../../core/authorize.js';
+import DashboardService from '../../services/DashboardService.js';
+import RecapValidator from '../../validator/recap/index.js';
 
 /**
- * Plugin Hapi untuk modul dashboard pemilik (/dashboard/*).
+ * Express Router untuk modul dashboard (/dashboard/*).
  */
-const dashboardPlugin = {
-  name: 'dashboard',
-  version: '1.0.0',
-  register: async (server, { service, validator }) => {
-    const dashboardHandler = new DashboardHandler({ service, validator });
-    server.route(routes(dashboardHandler));
-  },
-};
+export function createDashboardRouter({
+  service = new DashboardService(),
+  validator = RecapValidator,
+} = {}) {
+  const router = Router();
+  const handler = new DashboardHandler({ service, validator });
 
-export default dashboardPlugin;
+  // GET /dashboard/summary — butuh JWT + role owner
+  router.get('/summary', authenticate, requireRole('owner'), handler.getDashboardSummaryHandler);
+
+  return router;
+}

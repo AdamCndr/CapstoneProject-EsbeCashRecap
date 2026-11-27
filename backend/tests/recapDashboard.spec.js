@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createServer } from '../src/server.js';
+import request from 'supertest';
+import { createApp } from '../src/server.js';
 import { pool } from '../src/core/database.js';
 import TokenManager from '../src/tokenize/TokenManager.js';
 import {
@@ -9,12 +10,12 @@ import {
 } from '../database/seedTransactions60.js';
 
 describe('GET /recap & GET /dashboard/summary (SQL SUM GROUP BY vs Hitungan Manual)', () => {
-  let server;
+  let app;
   const ownerToken = TokenManager.generateAccessToken({ id: 1, username: 'owner', role: 'owner' });
   const employeeToken = TokenManager.generateAccessToken({ id: 2, username: 'employee', role: 'employee' });
 
   beforeAll(async () => {
-    server = await createServer();
+    app = createApp();
     // Kosongkan tabel transaction untuk menguji kondisi DB kosong terlebih dahulu
     await pool.query('TRUNCATE TABLE transaction RESTART IDENTITY CASCADE');
   });
@@ -24,14 +25,12 @@ describe('GET /recap & GET /dashboard/summary (SQL SUM GROUP BY vs Hitungan Manu
   });
 
   it('GET /dashboard/summary & GET /recap mengembalikan struktur kosong yang valid saat belum ada transaksi', async () => {
-    const summaryRes = await server.inject({
-      method: 'GET',
-      url: '/dashboard/summary?date=2026-11-26',
-      headers: { authorization: `Bearer ${ownerToken}` },
-    });
+    const summaryRes = await request(app)
+      .get('/dashboard/summary?date=2026-11-26')
+      .set('Authorization', `Bearer ${ownerToken}`);
 
-    expect(summaryRes.statusCode).toBe(200);
-    const summary = summaryRes.result.data;
+    expect(summaryRes.status).toBe(200);
+    const summary = summaryRes.body.data;
     expect(summary.date).toBe('2026-11-26');
     expect(summary.total_hari_ini).toEqual({
       pemasukan: 0,
@@ -56,16 +55,14 @@ describe('GET /recap & GET /dashboard/summary (SQL SUM GROUP BY vs Hitungan Manu
       expect(typeof day.total).toBe('number');
     }
 
-    const recapRes = await server.inject({
-      method: 'GET',
-      url: '/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date,shift,method',
-      headers: { authorization: `Bearer ${ownerToken}` },
-    });
+    const recapRes = await request(app)
+      .get('/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date,shift,method')
+      .set('Authorization', `Bearer ${ownerToken}`);
 
-    expect(recapRes.statusCode).toBe(200);
-    expect(recapRes.result.data.groups).toEqual([]);
-    expect(recapRes.result.data.grand_total).toBe(0);
-    expect(recapRes.result.data.summary.transaction_count).toBe(0);
+    expect(recapRes.status).toBe(200);
+    expect(recapRes.body.data.groups).toEqual([]);
+    expect(recapRes.body.data.grand_total).toBe(0);
+    expect(recapRes.body.data.summary.transaction_count).toBe(0);
   });
 
   describe('Setelah seed 60 transaksi (52 terkonfirmasi, 4 perlu_ditinjau, 4 ditolak)', () => {
@@ -77,46 +74,38 @@ describe('GET /recap & GET /dashboard/summary (SQL SUM GROUP BY vs Hitungan Manu
 
     it('menolak akses tanpa token (401) dan role employee (403 FORBIDDEN)', async () => {
       for (const path of ['/recap', '/dashboard/summary']) {
-        const unauth = await server.inject({ method: 'GET', url: path });
-        expect(unauth.statusCode).toBe(401);
+        const unauth = await request(app).get(path);
+        expect(unauth.status).toBe(401);
 
-        const forbidden = await server.inject({
-          method: 'GET',
-          url: path,
-          headers: { authorization: `Bearer ${employeeToken}` },
-        });
-        expect(forbidden.statusCode).toBe(403);
-        expect(forbidden.result.error.code).toBe('FORBIDDEN');
+        const forbidden = await request(app)
+          .get(path)
+          .set('Authorization', `Bearer ${employeeToken}`);
+        expect(forbidden.status).toBe(403);
+        expect(forbidden.body.error.code).toBe('FORBIDDEN');
       }
     });
 
     it('menolak parameter tidak valid pada GET /recap dengan 400 VALIDATION_ERROR', async () => {
-      const invalidOrder = await server.inject({
-        method: 'GET',
-        url: '/recap?date_from=2026-11-26&date_to=2026-11-20',
-        headers: { authorization: `Bearer ${ownerToken}` },
-      });
-      expect(invalidOrder.statusCode).toBe(400);
-      expect(invalidOrder.result.error.code).toBe('VALIDATION_ERROR');
+      const invalidOrder = await request(app)
+        .get('/recap?date_from=2026-11-26&date_to=2026-11-20')
+        .set('Authorization', `Bearer ${ownerToken}`);
+      expect(invalidOrder.status).toBe(400);
+      expect(invalidOrder.body.error.code).toBe('VALIDATION_ERROR');
 
-      const invalidGroup = await server.inject({
-        method: 'GET',
-        url: '/recap?group_by=date,invalid_col',
-        headers: { authorization: `Bearer ${ownerToken}` },
-      });
-      expect(invalidGroup.statusCode).toBe(400);
-      expect(invalidGroup.result.error.code).toBe('VALIDATION_ERROR');
+      const invalidGroup = await request(app)
+        .get('/recap?group_by=date,invalid_col')
+        .set('Authorization', `Bearer ${ownerToken}`);
+      expect(invalidGroup.status).toBe(400);
+      expect(invalidGroup.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     it('GET /recap?date_from&date_to&group_by=date,shift,method menghasilkan selisih Rp0 terhadap hitungan manual', async () => {
-      const res = await server.inject({
-        method: 'GET',
-        url: '/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date,shift,method',
-        headers: { authorization: `Bearer ${ownerToken}` },
-      });
+      const res = await request(app)
+        .get('/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date,shift,method')
+        .set('Authorization', `Bearer ${ownerToken}`);
 
-      expect(res.statusCode).toBe(200);
-      const { groups, grand_total, summary } = res.result.data;
+      expect(res.status).toBe(200);
+      const { groups, grand_total, summary } = res.body.data;
 
       // Pastikan semua tipe numerik sudah dikonversi dari string pg -> JS Number
       expect(typeof grand_total).toBe('number');
@@ -137,42 +126,34 @@ describe('GET /recap & GET /dashboard/summary (SQL SUM GROUP BY vs Hitungan Manu
 
     it('GET /recap per dimensi tunggal (date, shift, method) masing-masing berselisih Rp0', async () => {
       const [byDateRes, byShiftRes, byMethodRes] = await Promise.all([
-        server.inject({
-          method: 'GET',
-          url: '/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date',
-          headers: { authorization: `Bearer ${ownerToken}` },
-        }),
-        server.inject({
-          method: 'GET',
-          url: '/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=shift',
-          headers: { authorization: `Bearer ${ownerToken}` },
-        }),
-        server.inject({
-          method: 'GET',
-          url: '/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=method',
-          headers: { authorization: `Bearer ${ownerToken}` },
-        }),
+        request(app)
+          .get('/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=date')
+          .set('Authorization', `Bearer ${ownerToken}`),
+        request(app)
+          .get('/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=shift')
+          .set('Authorization', `Bearer ${ownerToken}`),
+        request(app)
+          .get('/recap?date_from=2026-11-20&date_to=2026-11-26&group_by=method')
+          .set('Authorization', `Bearer ${ownerToken}`),
       ]);
 
-      expect(byDateRes.result.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byDate);
-      expect(byDateRes.result.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
+      expect(byDateRes.body.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byDate);
+      expect(byDateRes.body.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
 
-      expect(byShiftRes.result.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byShift);
-      expect(byShiftRes.result.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
+      expect(byShiftRes.body.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byShift);
+      expect(byShiftRes.body.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
 
-      expect(byMethodRes.result.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byMethod);
-      expect(byMethodRes.result.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
+      expect(byMethodRes.body.data.groups).toEqual(EXPECTED_MANUAL_RECAP.byMethod);
+      expect(byMethodRes.body.data.grand_total).toBe(EXPECTED_MANUAL_RECAP.grandTotal.grand_total);
     });
 
     it('GET /dashboard/summary mengembalikan total hari ini, per shift, per metode, perlu_ditinjau, dan 7 hari terakhir yang akurat (selisih Rp0)', async () => {
-      const res = await server.inject({
-        method: 'GET',
-        url: '/dashboard/summary?date=2026-11-26',
-        headers: { authorization: `Bearer ${ownerToken}` },
-      });
+      const res = await request(app)
+        .get('/dashboard/summary?date=2026-11-26')
+        .set('Authorization', `Bearer ${ownerToken}`);
 
-      expect(res.statusCode).toBe(200);
-      const data = res.result.data;
+      expect(res.status).toBe(200);
+      const data = res.body.data;
       const expected = EXPECTED_MANUAL_RECAP.dashboardOn20261126;
 
       expect(data.date).toBe(expected.date);
