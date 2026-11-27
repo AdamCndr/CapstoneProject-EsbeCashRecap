@@ -50,7 +50,7 @@ const prefersReducedMotion = () =>
 
 // Tombol pil putih di atas latar hero (sama dengan kontrol hero di Dashboard)
 const heroBtn =
-  'inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[var(--surface-app)] px-4 text-sm font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none';
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--surface-app)] px-3.5 text-sm max-sm:w-full sm:min-h-11 sm:justify-start sm:px-4 font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none';
 
 // Animasi hover icon: sama dengan halaman Transaksi/OCR. Dipasang di icon; elemen induknya harus punya class `group`.
 const ICON_HOVER = 'transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6 motion-reduce:transition-none';
@@ -134,10 +134,10 @@ function GlowPill({
 //   judul 18px semibold · subjudul 14px muted
 function CardHeader({ title, hint: hintText, right }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2 sm:mb-5">
       <div className="min-w-[11rem] flex-1">
-        <h2 className="text-lg font-semibold leading-snug text-[var(--text-main)]">{title}</h2>
-        {hintText && <p className="mt-1 text-sm leading-snug text-[var(--text-muted)]">{hintText}</p>}
+        <h2 className="text-base font-semibold leading-snug text-[var(--text-main)] sm:text-lg">{title}</h2>
+        {hintText && <p className="mt-1 text-xs leading-snug text-[var(--text-muted)] sm:text-sm">{hintText}</p>}
       </div>
       {right}
     </div>
@@ -167,7 +167,7 @@ const MIN_PASSWORD = 6;
 
 const ROLE_FILTERS = [
   ['semua', 'Semua'],
-  ['Pemilik', 'Pemilik (Owner)'],
+  ['Pemilik', 'Pemilik (Owner)', 'Pemilik'],
   ['Karyawan', 'Karyawan']
 ];
 
@@ -503,7 +503,7 @@ export default function UserManagementPage({ currentUser }) {
   const noMotion = prefersReducedMotion();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       <style>{GLOW_CSS}</style>
       {/* Banner Notifikasi Toast */}
       {notification && (
@@ -525,7 +525,7 @@ export default function UserManagementPage({ currentUser }) {
         ref={heroGlow.ref}
         onMouseMove={heroGlow.onMouseMove}
         onMouseLeave={heroGlow.onMouseLeave}
-        className="relative overflow-hidden rounded-[22px] p-5 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] lg:p-6"
+        className="relative overflow-hidden rounded-[22px] p-4 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] sm:p-5 lg:p-6"
         style={{ background: 'var(--grad-hero)', ...reveal(0) }}
         aria-label="Manajemen akun dan akses"
       >
@@ -533,17 +533,17 @@ export default function UserManagementPage({ currentUser }) {
         {/* Glow latar mengikuti mouse; CSS variable diwariskan dari <section>. */}
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 rounded-[22px]" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-stretch">
-          <div className="relative z-10 flex flex-col gap-6">
+        <div className="relative grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch">
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-6">
             <div style={reveal(1, 10)}>
-              <p className="group mb-3 inline-flex items-center gap-2 text-sm text-[color:var(--glass-text-soft)]">
-                <ShieldCheck className={`h-4 w-4 ${ICON_HOVER}`} aria-hidden="true" />
+              <p className="group mb-2 inline-flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)] sm:mb-3 sm:text-sm">
+                <ShieldCheck className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${ICON_HOVER}`} aria-hidden="true" />
                 Pengaturan akses
               </p>
-              <h1 className="break-words text-3xl font-semibold leading-[1.15] tracking-tight sm:text-4xl xl:text-5xl">
+              <h1 className="break-words text-2xl font-semibold leading-[1.15] tracking-tight sm:text-4xl xl:text-5xl">
                 Manajemen Akun &amp; Akses
               </h1>
-              <p className="mt-3 max-w-md text-sm leading-snug text-[color:var(--glass-text-soft)]">
+              <p className="mt-2 max-w-md text-sm leading-snug sm:mt-3 text-[color:var(--glass-text-soft)]">
                 Kelola kredensial akun karyawan dan pemilik toko. Halaman ini hanya dapat diakses oleh Owner.
               </p>
             </div>
@@ -561,19 +561,19 @@ export default function UserManagementPage({ currentUser }) {
               <div className="absolute -right-14 -top-16 h-56 w-56 rounded-full bg-[var(--glass-line)]" />
               <div className="absolute -bottom-20 left-6 h-52 w-52 rounded-full bg-[var(--glass-soft)]" />
             </div>
-            <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[34rem] xl:w-[40rem]">
+            <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:w-[34rem] xl:w-[40rem]">
               <div
                 ref={tiltTotal.ref}
                 onMouseMove={tiltTotal.onMouseMove}
                 onMouseLeave={tiltTotal.onMouseLeave}
-                className="group flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4 shadow-[var(--shadow-glass-card)] backdrop-blur-xl"
+                className="group col-span-2 flex min-w-0 flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-3.5 shadow-[var(--shadow-glass-card)] backdrop-blur-xl sm:col-span-1 sm:p-4"
                 style={reveal(2, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <Users className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Total akun
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{users.length}</p>
+                <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{users.length}</p>
                 <div className="mt-auto pt-3">
                   <div
                     className="h-1.5 overflow-hidden rounded-full bg-[var(--glass-line)]"
@@ -595,14 +595,14 @@ export default function UserManagementPage({ currentUser }) {
                 ref={tiltOwner.ref}
                 onMouseMove={tiltOwner.onMouseMove}
                 onMouseLeave={tiltOwner.onMouseLeave}
-                className="group flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4 shadow-[var(--shadow-glass-card)] backdrop-blur-xl"
+                className="group flex min-w-0 flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-3 shadow-[var(--shadow-glass-card)] backdrop-blur-xl sm:p-4"
                 style={reveal(3, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <Shield className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Pemilik (Owner)
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{ownerCount}</p>
+                <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{ownerCount}</p>
                 <div className="mt-auto pt-3">
                   <div
                     className="h-1.5 overflow-hidden rounded-full bg-[var(--glass-line)]"
@@ -624,14 +624,14 @@ export default function UserManagementPage({ currentUser }) {
                 ref={tiltStaff.ref}
                 onMouseMove={tiltStaff.onMouseMove}
                 onMouseLeave={tiltStaff.onMouseLeave}
-                className="group flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4 shadow-[var(--shadow-glass-card)] backdrop-blur-xl"
+                className="group flex min-w-0 flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-3 shadow-[var(--shadow-glass-card)] backdrop-blur-xl sm:p-4"
                 style={reveal(4, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <User className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Karyawan
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{employeeCount}</p>
+                <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{employeeCount}</p>
                 <div className="mt-auto pt-3">
                   <div
                     className="h-1.5 overflow-hidden rounded-full bg-[var(--glass-line)]"
@@ -652,9 +652,9 @@ export default function UserManagementPage({ currentUser }) {
       </section>
 
       {/* PROTEKSI AKUN ABSOLUT */}
-      <div className="card group flex items-start gap-3" style={reveal(5)}>
+      <div className="card group flex items-start gap-3 max-sm:!p-3" style={reveal(5)}>
         <ShieldAlert {...ico} className={`mt-0.5 shrink-0 text-[var(--royal-700)] ${ICON_HOVER}`} />
-        <p className="text-sm leading-5 text-[var(--text-muted)]">
+        <p className="text-[13px] leading-5 text-[var(--text-muted)] sm:text-sm">
           <span className="font-semibold text-[var(--royal-700)]">Proteksi Akun Absolut:</span> Sistem
           memiliki 1 Akun Pemilik Absolut (Master Backup Owner) yang terkunci secara permanen. Anda
           dapat menambah akun Owner lain maupun karyawan, namun akun absolut tidak dapat dihapus demi
@@ -663,24 +663,26 @@ export default function UserManagementPage({ currentUser }) {
       </div>
 
       {/* DAFTAR AKUN */}
-      <section className="card" style={reveal(6)}>
+      <section className="card min-w-0 max-sm:!p-3" style={reveal(6)}>
         <CardHeader
           title="Daftar akun"
           hint={`${filteredUsers.length} dari ${users.length} akun`}
           right={
-            <TxSearch
-              value={searchQuery}
-              onChange={setSearchQuery}
-              label="Cari akun"
-              placeholder="Cari berdasarkan nama atau username..."
-            />
+            <div className="w-full min-w-0 sm:w-auto">
+              <TxSearch
+                value={searchQuery}
+                onChange={setSearchQuery}
+                label="Cari akun"
+                placeholder="Cari berdasarkan nama atau username..."
+              />
+            </div>
           }
         />
 
         <div
           role="radiogroup"
           aria-label="Filter peran"
-          className="relative mb-4 inline-grid grid-cols-3 rounded-xl bg-[var(--surface-muted)] p-1 text-xs font-medium"
+          className="relative mb-4 grid w-full grid-cols-3 rounded-xl bg-[var(--surface-muted)] p-1 text-xs font-medium sm:inline-grid sm:w-auto"
         >
           {/* Penanda terpilih: bergeser mulus antar segmen */}
           <span
@@ -691,12 +693,12 @@ export default function UserManagementPage({ currentUser }) {
               transition: noMotion ? 'none' : `transform 320ms ${EASE_OUT}`
             }}
           />
-          {ROLE_FILTERS.map(([val, text]) => {
+          {ROLE_FILTERS.map(([val, text, short]) => {
             const on = roleFilter === val;
             return (
               <label
                 key={val}
-                className={`relative z-10 cursor-pointer select-none whitespace-nowrap rounded-lg px-3.5 py-1.5 text-center transition-colors duration-200 motion-reduce:transition-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${on
+                className={`relative z-10 cursor-pointer select-none whitespace-nowrap rounded-lg px-2 py-2 text-center sm:px-3.5 sm:py-1.5 transition-colors duration-200 motion-reduce:transition-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${on
                   ? 'font-semibold text-[var(--text-main)]'
                   : 'text-[var(--text-muted)] hover:bg-[color-mix(in_srgb,var(--surface-card)_55%,transparent)] hover:text-[var(--text-main)]'
                   }`}
@@ -709,7 +711,14 @@ export default function UserManagementPage({ currentUser }) {
                   onChange={() => setRoleFilter(val)}
                   className="sr-only"
                 />
-                {text}
+                {short ? (
+                  <>
+                    <span className="sm:hidden">{short}</span>
+                    <span className="hidden sm:inline">{text}</span>
+                  </>
+                ) : (
+                  text
+                )}
               </label>
             );
           })}
@@ -720,159 +729,287 @@ export default function UserManagementPage({ currentUser }) {
         ) : filteredUsers.length === 0 ? (
           <EmptyNote>Tidak ada akun yang cocok dengan pencarian atau filter.</EmptyNote>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <caption className="sr-only">Daftar Akun Pengguna Esbe Cash Recap</caption>
-              <thead>
-                <tr className="text-xs text-[var(--text-muted)]">
-                  {USER_COLUMNS.map((col) => {
-                    const align = col.align === 'right' ? 'text-right' : '';
-                    const pad = col.align === 'right' ? 'pl-3' : 'pr-3';
-                    if (col.noSort) {
+          <>
+            {/* Di bawah lg: pilihan urutan + kartu per akun, tabel mulai lg */}
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 lg:hidden" role="group" aria-label="Urutkan akun">
+              <span className="mr-1 text-xs text-[var(--text-muted)]">Urutkan</span>
+              {USER_COLUMNS.filter((col) => !col.noSort).map((col) => {
+                const on = sort.key === col.key;
+                const SortIcon = !on ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+                return (
+                  <button
+                    key={col.key}
+                    type="button"
+                    onClick={() => toggleSort(col.key)}
+                    aria-pressed={on}
+                    aria-label={`Urutkan berdasarkan ${col.label}`}
+                    className={`group inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg border px-2.5 text-xs font-medium outline-none transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${on
+                      ? 'border-[color:var(--royal-300)] bg-[var(--royal-50)] text-[var(--royal-700)]'
+                      : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-muted)]'
+                      }`}
+                  >
+                    {col.label}
+                    <SortIcon aria-hidden="true" className={`h-3 w-3 ${ICON_HOVER} ${on ? '' : 'opacity-50'}`} />
+                  </button>
+                );
+              })}
+            </div>
+
+            <ul className="space-y-3 lg:hidden" aria-label="Daftar akun">
+              {filteredUsers.map((user) => {
+                const isCurrent = currentUser?.username === user.username;
+                const isAbs = user.isAbsolute || user.username === ABSOLUTE_OWNER.username;
+                const isOwner = user.role === 'Pemilik';
+                return (
+                  <li
+                    key={user.id}
+                    className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-2.5 sm:p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${isOwner
+                          ? 'bg-[var(--royal-100)] text-[var(--royal-700)]'
+                          : 'bg-[var(--amber-100)] text-[var(--amber-700)]'
+                          }`}
+                      >
+                        {(user.name || '').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-main)] sm:text-sm">
+                          <span className="truncate">{user.name}</span>
+                          {isCurrent && (
+                            <span className="shrink-0 rounded-full bg-[var(--surface-hover)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--text-muted-alt)]">
+                              Anda
+                            </span>
+                          )}
+                        </div>
+                        <p className="truncate text-[11px] leading-4 text-[var(--text-muted)]">
+                          <span className="font-mono">@{user.username}</span> · ID: {user.id}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isOwner
+                          ? 'bg-[var(--royal-100)] text-[var(--royal-700)]'
+                          : 'bg-[var(--amber-100)] text-[var(--amber-700)]'
+                          }`}
+                      >
+                        {isOwner ? (
+                          <Shield className="h-3 w-3" aria-hidden="true" />
+                        ) : (
+                          <User className="h-3 w-3" aria-hidden="true" />
+                        )}
+                        {user.role}
+                      </span>
+                      {isAbs ? (
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--royal-200)] bg-[var(--royal-50)] px-2 py-0.5 text-[11px] font-semibold text-[var(--royal-700)]">
+                          <Lock className="h-3 w-3 text-[var(--royal-600)]" aria-hidden="true" />
+                          Cadangan Absolut
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-[var(--text-muted)]">Akun Terdaftar</span>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-2">
+                      {isAbs ? (
+                        <span
+                          className="select-none px-2 py-1 text-xs italic text-[var(--text-muted)]"
+                          title="Akun absolut dilindungi sistem dan tidak dapat diubah atau dihapus"
+                        >
+                          Terkunci
+                        </span>
+                      ) : (
+                        <>
+                          <GlowPill radius="0.5rem" press className="inline-flex">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(user)}
+                              className={`group inline-flex min-h-8 items-center gap-1 rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs font-medium text-[var(--royal-700)] transition-all duration-150 hover:border-[var(--royal-500)] hover:bg-[var(--royal-50)] active:scale-95 motion-reduce:transition-none ${focusRing}`}
+                            >
+                              <Pencil className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                              Edit
+                            </button>
+                          </GlowPill>
+                          <GlowPill radius="0.5rem" press color="var(--cash-out)" className="inline-flex">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(user)}
+                              disabled={isCurrent}
+                              className={`group inline-flex min-h-8 items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${isCurrent
+                                ? 'cursor-not-allowed border-[var(--border-default)] text-[var(--text-muted)] active:scale-100'
+                                : 'border-[var(--border-default)] text-[var(--cash-out)] hover:border-[var(--cash-out)] hover:bg-[var(--cash-out-light)]'
+                                }`}
+                              title={isCurrent ? 'Tidak bisa menghapus akun yang sedang aktif digunakan' : 'Hapus akun ini'}
+                            >
+                              <Trash2 className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                              Hapus
+                            </button>
+                          </GlowPill>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="hidden overflow-x-auto lg:block">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <caption className="sr-only">Daftar Akun Pengguna Esbe Cash Recap</caption>
+                <thead>
+                  <tr className="text-xs text-[var(--text-muted)]">
+                    {USER_COLUMNS.map((col) => {
+                      const align = col.align === 'right' ? 'text-right' : '';
+                      const pad = col.align === 'right' ? 'pl-3' : 'pr-3';
+                      if (col.noSort) {
+                        return (
+                          <th key={col.key} scope="col" className={`py-2.5 font-normal ${pad} ${align}`}>
+                            {col.label}
+                          </th>
+                        );
+                      }
+                      const active = sort.key === col.key;
+                      const SortIcon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
                       return (
-                        <th key={col.key} scope="col" className={`py-2.5 font-normal ${pad} ${align}`}>
-                          {col.label}
+                        <th
+                          key={col.key}
+                          scope="col"
+                          aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                          className={`py-2.5 font-normal ${pad} ${align}`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleSort(col.key)}
+                            aria-label={`Urutkan berdasarkan ${col.label}`}
+                            className={`group -mx-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none ${align === 'text-right' ? 'flex-row-reverse' : ''}`}
+                          >
+                            {col.label}
+                            <SortIcon
+                              aria-hidden="true"
+                              className={`h-3 w-3 ${ICON_HOVER} ${active ? 'text-[var(--royal-600)]' : 'opacity-50'}`}
+                            />
+                          </button>
                         </th>
                       );
-                    }
-                    const active = sort.key === col.key;
-                    const SortIcon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => {
+                    const isCurrent = currentUser?.username === user.username;
+                    const isAbs = user.isAbsolute || user.username === ABSOLUTE_OWNER.username;
                     return (
-                      <th
-                        key={col.key}
-                        scope="col"
-                        aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        className={`py-2.5 font-normal ${pad} ${align}`}
+                      <tr
+                        key={user.id}
+                        className="group grid-l transition-colors duration-700 hover:bg-[var(--royal-50)] motion-reduce:transition-none"
                       >
-                        <button
-                          type="button"
-                          onClick={() => toggleSort(col.key)}
-                          aria-label={`Urutkan berdasarkan ${col.label}`}
-                          className={`group -mx-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none ${align === 'text-right' ? 'flex-row-reverse' : ''}`}
-                        >
-                          {col.label}
-                          <SortIcon
-                            aria-hidden="true"
-                            className={`h-3 w-3 ${ICON_HOVER} ${active ? 'text-[var(--royal-600)]' : 'opacity-50'}`}
-                          />
-                        </button>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => {
-                  const isCurrent = currentUser?.username === user.username;
-                  const isAbs = user.isAbsolute || user.username === ABSOLUTE_OWNER.username;
-                  return (
-                    <tr
-                      key={user.id}
-                      className="group grid-l transition-colors duration-700 hover:bg-[var(--royal-50)] motion-reduce:transition-none"
-                    >
-                      <td className="py-3 pr-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${user.role === 'Pemilik'
+                        <td className="py-3 pr-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${user.role === 'Pemilik'
+                                ? 'bg-[var(--royal-100)] text-[var(--royal-700)]'
+                                : 'bg-[var(--amber-100)] text-[var(--amber-700)]'
+                                }`}
+                            >
+                              {(user.name || '').slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 font-medium text-[var(--text-main)]">
+                                <span>{user.name}</span>
+                                {isCurrent && (
+                                  <span className="rounded-full bg-[var(--surface-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted-alt)]">
+                                    Anda
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-[var(--text-muted)]">ID: {user.id}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 pr-3 font-mono text-xs text-[var(--text-main)]">@{user.username}</td>
+
+                        <td className="py-3 pr-3">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${user.role === 'Pemilik'
                               ? 'bg-[var(--royal-100)] text-[var(--royal-700)]'
                               : 'bg-[var(--amber-100)] text-[var(--amber-700)]'
                               }`}
                           >
-                            {(user.name || '').slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 font-medium text-[var(--text-main)]">
-                              <span>{user.name}</span>
-                              {isCurrent && (
-                                <span className="rounded-full bg-[var(--surface-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted-alt)]">
-                                  Anda
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-[var(--text-muted)]">ID: {user.id}</div>
-                          </div>
-                        </div>
-                      </td>
+                            {user.role === 'Pemilik' ? (
+                              <Shield className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
+                            ) : (
+                              <User className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
+                            )}
+                            {user.role}
+                          </span>
+                        </td>
 
-                      <td className="py-3 pr-3 font-mono text-xs text-[var(--text-main)]">@{user.username}</td>
-
-                      <td className="py-3 pr-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${user.role === 'Pemilik'
-                            ? 'bg-[var(--royal-100)] text-[var(--royal-700)]'
-                            : 'bg-[var(--amber-100)] text-[var(--amber-700)]'
-                            }`}
-                        >
-                          {user.role === 'Pemilik' ? (
-                            <Shield className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
+                        <td className="py-3 pr-3">
+                          {isAbs ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--royal-200)] bg-[var(--royal-50)] px-2.5 py-1 text-xs font-semibold text-[var(--royal-700)]">
+                              <Lock className={`h-3 w-3 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
+                              Cadangan Absolut (Permanen)
+                            </span>
                           ) : (
-                            <User className={`h-3 w-3 ${ICON_HOVER}`} aria-hidden="true" />
+                            <span className="text-xs text-[var(--text-muted)]">Akun Terdaftar</span>
                           )}
-                          {user.role}
-                        </span>
-                      </td>
+                        </td>
 
-                      <td className="py-3 pr-3">
-                        {isAbs ? (
-                          <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--royal-200)] bg-[var(--royal-50)] px-2.5 py-1 text-xs font-semibold text-[var(--royal-700)]">
-                            <Lock className={`h-3 w-3 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
-                            Cadangan Absolut (Permanen)
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[var(--text-muted)]">Akun Terdaftar</span>
-                        )}
-                      </td>
+                        <td className="py-3 pl-3 text-right">
+                          {isAbs ? (
+                            <span
+                              className="select-none px-2 py-1 text-xs italic text-[var(--text-muted)]"
+                              title="Akun absolut dilindungi sistem dan tidak dapat diubah atau dihapus"
+                            >
+                              Terkunci
+                            </span>
+                          ) : (
+                            <div className="inline-flex items-center justify-end gap-2">
+                              <GlowPill radius="0.5rem" press className="inline-flex">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditModal(user)}
+                                  className={`group inline-flex items-center gap-1 rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--royal-700)] transition-all duration-150 hover:border-[var(--royal-500)] hover:bg-[var(--royal-50)] active:scale-95 motion-reduce:transition-none ${focusRing}`}
+                                  title="Edit akun ini"
+                                >
+                                  <Pencil className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                                  Edit
+                                </button>
+                              </GlowPill>
 
-                      <td className="py-3 pl-3 text-right">
-                        {isAbs ? (
-                          <span
-                            className="select-none px-2 py-1 text-xs italic text-[var(--text-muted)]"
-                            title="Akun absolut dilindungi sistem dan tidak dapat diubah atau dihapus"
-                          >
-                            Terkunci
-                          </span>
-                        ) : (
-                          <div className="inline-flex items-center justify-end gap-2">
-                            <GlowPill radius="0.5rem" press className="inline-flex">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(user)}
-                                className={`group inline-flex items-center gap-1 rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--royal-700)] transition-all duration-150 hover:border-[var(--royal-500)] hover:bg-[var(--royal-50)] active:scale-95 motion-reduce:transition-none ${focusRing}`}
-                                title="Edit akun ini"
-                              >
-                                <Pencil className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
-                                Edit
-                              </button>
-                            </GlowPill>
-
-                            <GlowPill radius="0.5rem" press color="var(--cash-out)" className="inline-flex">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUser(user)}
-                                disabled={isCurrent}
-                                className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${isCurrent
-                                  ? 'cursor-not-allowed border-[var(--border-default)] text-[var(--text-muted)] active:scale-100'
-                                  : 'border-[var(--border-default)] text-[var(--cash-out)] hover:border-[var(--cash-out)] hover:bg-[var(--cash-out-light)]'
-                                  }`}
-                                title={
-                                  isCurrent
-                                    ? 'Tidak bisa menghapus akun yang sedang aktif digunakan'
-                                    : 'Hapus akun ini'
-                                }
-                              >
-                                <Trash2 className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
-                                Hapus
-                              </button>
-                            </GlowPill>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                              <GlowPill radius="0.5rem" press color="var(--cash-out)" className="inline-flex">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUser(user)}
+                                  disabled={isCurrent}
+                                  className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 motion-reduce:transition-none ${focusRing} ${isCurrent
+                                    ? 'cursor-not-allowed border-[var(--border-default)] text-[var(--text-muted)] active:scale-100'
+                                    : 'border-[var(--border-default)] text-[var(--cash-out)] hover:border-[var(--cash-out)] hover:bg-[var(--cash-out-light)]'
+                                    }`}
+                                  title={
+                                    isCurrent
+                                      ? 'Tidak bisa menghapus akun yang sedang aktif digunakan'
+                                      : 'Hapus akun ini'
+                                  }
+                                >
+                                  <Trash2 className={`h-3.5 w-3.5 ${ICON_HOVER}`} aria-hidden="true" />
+                                  Hapus
+                                </button>
+                              </GlowPill>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
@@ -901,7 +1038,7 @@ export default function UserManagementPage({ currentUser }) {
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4">
+              <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3 sm:gap-4 sm:px-6 sm:pt-5 sm:pb-4">
                 <div className="group flex items-start gap-3">
                   <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--royal-50)] text-[var(--royal-700)]">
                     {isEdit ? (
@@ -911,7 +1048,7 @@ export default function UserManagementPage({ currentUser }) {
                     )}
                   </span>
                   <div>
-                    <h2 id={titleId} className="text-lg font-semibold leading-6 text-[var(--text-main)]">
+                    <h2 id={titleId} className="text-base font-semibold leading-6 text-[var(--text-main)] sm:text-lg">
                       {isEdit ? 'Edit Akun' : 'Tambah Akun Baru'}
                     </h2>
                     <p className="mt-0.5 text-xs leading-4 text-[var(--text-muted)]">
@@ -933,7 +1070,7 @@ export default function UserManagementPage({ currentUser }) {
               </div>
 
               <form onSubmit={handleSubmitUser} className="flex min-h-0 flex-1 flex-col text-sm">
-                <div className="flex-1 space-y-4 overflow-y-auto px-6 pb-5">
+                <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-5">
                   <fieldset disabled={submitting || selfEdit} className={selfEdit ? 'opacity-60' : ''}>
                     <legend className={label}>Peran / Hak Akses</legend>
                     <div className="grid grid-cols-2 gap-2">
@@ -950,7 +1087,7 @@ export default function UserManagementPage({ currentUser }) {
                             className="h-full"
                           >
                             <label
-                              className={`group flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold ${motion} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
+                              className={`group flex h-full w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold sm:gap-2 sm:px-3 ${motion} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
                                 ? opt.active
                                 : 'border-[var(--border-default)] bg-[var(--surface-muted)] text-[var(--text-muted)]'
                                 }`}
@@ -990,7 +1127,7 @@ export default function UserManagementPage({ currentUser }) {
                         placeholder="Contoh: Rian Hidayat"
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        className={field}
+                        className={`${field} max-sm:text-base`}
                       />
                     </GlowPill>
                   </div>
@@ -1014,7 +1151,7 @@ export default function UserManagementPage({ currentUser }) {
                         disabled={selfEdit}
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value.replace(/\s/g, '').toLowerCase())}
-                        className={`${field} pl-8 font-mono`}
+                        className={`${field} pl-8 font-mono max-sm:text-base`}
                       />
                     </GlowPill>
                   </div>
@@ -1038,7 +1175,7 @@ export default function UserManagementPage({ currentUser }) {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         aria-describedby="new-password-hint"
-                        className={`${field} pr-11 pl-10`}
+                        className={`${field} pr-11 pl-10 max-sm:text-base`}
                       />
                       <button
                         type="button"
@@ -1066,7 +1203,7 @@ export default function UserManagementPage({ currentUser }) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-muted)] px-6 py-3">
+                <div className="flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-muted)] px-4 py-3 sm:px-6 max-sm:[&>button]:min-h-11 max-sm:[&>button]:flex-1">
                   <button
                     type="button"
                     onClick={closeAddModal}

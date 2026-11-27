@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Lock, ShieldCheck, Store, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, ShieldCheck, Store, User } from 'lucide-react';
 import { btnPrimary, btnSecondary, card, field, hint, ico, label, motion, Notice } from '../lib/ui';
 import { usePageReveal } from '../lib/motion';
 import ShiftSwitch from '../components/ui/ShiftSwitch';
@@ -47,6 +47,7 @@ const focusRing =
 export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [detectedUser, setDetectedUser] = useState(null);
@@ -136,7 +137,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
       if (userRole === 'Pemilik') {
         startTransition({ ...userData, shift: null });
       } else {
-        setDetectedUser(userData); // panel shift muncul di samping
+        setDetectedUser(userData); // panel shift muncul di samping/bawah
       }
     } catch (err) {
       const msg =
@@ -158,6 +159,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
   const handleQuickFill = (u, p) => {
     setUsername(u);
     setPassword(p);
+    setShowPassword(false);
     setError('');
     setDetectedUser(null);
   };
@@ -187,30 +189,30 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
               }`}
           >
             {/* Bar atas: identitas toko + waktu */}
-            <header className="flex items-center justify-between gap-4" style={reveal(0)}>
-              <div className="flex items-center gap-3">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-strong)]">
+            <header className="flex items-center justify-between gap-3" style={reveal(0)}>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-strong)] sm:h-11 sm:w-11">
                   <Store size={22} strokeWidth={1.75} aria-hidden="true" />
                 </div>
-                <div className="leading-tight">
-                  <p className="text-base font-semibold tracking-tight">Esbe Cash Recap</p>
-                  <p className="text-xs text-[var(--royal-100)]">Fotocopy Esbe Lampu Merah</p>
+                <div className="min-w-0 leading-tight">
+                  <p className="truncate text-base font-semibold tracking-tight">Esbe Cash Recap</p>
+                  <p className="truncate text-xs text-[var(--royal-100)]">Fotocopy Esbe Lampu Merah</p>
                 </div>
               </div>
-              <p className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-3 py-1.5 text-xs text-[var(--royal-100)]">
-                <span className="hidden sm:inline">{dateText}, </span>
+              <p className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-3 py-1.5 text-xs text-[var(--royal-100)]">
+                <span className="hidden md:inline">{dateText}, </span>
                 <span className="font-medium text-[var(--text-inverse)] tabular-nums">{timeText}</span>
               </p>
             </header>
 
-            {/* Karcis: form di kiri, "sobekan" pilih shift terbuka di kanan */}
-            <div className="m-auto w-full py-8" style={reveal(1)}>
+            {/* Karcis: form di kiri, "sobekan" pilih shift terbuka di kanan (desktop) / bawah (tablet & mobile) */}
+            <div className="m-auto w-full py-6 sm:py-8" style={reveal(1)}>
               <div
-                className={`${card} mx-auto flex w-full max-w-md flex-col overflow-hidden shadow-[var(--shadow-royal-card)] transition-[width] duration-500 ${EASE} motion-reduce:transition-none md:max-w-none md:flex-row ${showShift ? 'md:w-[46rem]' : 'md:w-[24rem]'
+                className={`${card} mx-auto flex w-full max-w-md flex-col overflow-hidden shadow-[var(--shadow-royal-card)] transition-[width] duration-500 ${EASE} motion-reduce:transition-none md:max-w-lg lg:max-w-none lg:flex-row ${showShift ? 'lg:w-[46rem]' : 'lg:w-[24rem]'
                   }`}
               >
                 {/* FORM */}
-                <div className="w-full shrink-0 p-6 sm:p-8 md:w-[24rem]">
+                <div className="w-full shrink-0 p-5 sm:p-8 lg:w-[24rem]">
                   <h1 className="text-xl font-semibold tracking-tight text-[var(--text-main)]">Masuk</h1>
                   <p className={`${hint} mt-1`}>
                     Pemilik langsung ke dashboard. Karyawan memilih shift setelah ini.
@@ -257,14 +259,27 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                         />
                         <input
                           id="password"
-                          type="password"
+                          type={showPassword ? 'text' : 'password'}
                           required
                           autoComplete="current-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Kata sandi"
-                          className={`${field} pl-9`}
+                          className={`${field} pr-11 pl-9`}
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                          aria-pressed={showPassword}
+                          className={`absolute top-1/2 right-1 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-main)] ${motion} ${focusRing}`}
+                        >
+                          {showPassword ? (
+                            <EyeOff size={16} aria-hidden="true" />
+                          ) : (
+                            <Eye size={16} aria-hidden="true" />
+                          )}
+                        </button>
                       </div>
                     </div>
 
@@ -308,11 +323,11 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                   aria-hidden={!showShift}
                   inert={!showShift}
                   className={`overflow-hidden transition-all duration-500 ${EASE} motion-reduce:transition-none ${showShift
-                    ? 'max-h-[40rem] opacity-100 md:max-h-none md:w-[22rem]'
-                    : 'max-h-0 opacity-0 md:w-0'
+                    ? 'max-h-[40rem] opacity-100 lg:max-h-none lg:w-[22rem]'
+                    : 'max-h-0 opacity-0 lg:w-0'
                     }`}
                 >
-                  <div className="h-full border-t-2 border-dashed border-[var(--border-default)] bg-[var(--surface-muted)] p-6 sm:p-8 md:w-[22rem] md:border-t-0 md:border-l-2">
+                  <div className="h-full border-t-2 border-dashed border-[var(--border-default)] bg-[var(--surface-muted)] p-5 sm:p-8 lg:w-[22rem] lg:border-t-0 lg:border-l-2">
                     {detectedUser && (
                       <>
                         <div className="flex items-center gap-3">
@@ -348,6 +363,7 @@ export default function LoginPage({ onLoginSuccess, onReveal, onDone }) {
                               onClick={() => {
                                 setDetectedUser(null);
                                 setPassword('');
+                                setShowPassword(false);
                               }}
                               className={`${btnSecondary} w-full`}
                             >

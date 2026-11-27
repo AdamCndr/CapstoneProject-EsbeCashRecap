@@ -24,7 +24,7 @@ const LIST_LIMIT = 5;
 
 // Tombol pil putih di atas latar hero (sama dengan kontrol hero di Dashboard)
 const heroBtn =
-  'inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[var(--surface-app)] px-4 text-sm font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none';
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--surface-app)] px-3.5 text-sm max-sm:w-full sm:min-h-11 sm:justify-start sm:px-4 font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none';
 
 // Animasi hover icon: sama dengan halaman Transaksi/OCR. Dipasang di icon; elemen induknya harus punya class `group`.
 const ICON_HOVER = 'transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6 motion-reduce:transition-none';
@@ -90,10 +90,10 @@ function GlowPill({ radius = '0.75rem', className = '', field = false, active = 
 //   judul 18px semibold · subjudul 14px muted
 function CardHeader({ title, hint, right }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2 sm:mb-5">
       <div className="min-w-[11rem] flex-1">
-        <h2 className="text-lg font-semibold leading-snug text-[var(--text-main)]">{title}</h2>
-        {hint && <p className="mt-1 text-sm leading-snug text-[var(--text-muted)]">{hint}</p>}
+        <h2 className="text-base font-semibold leading-snug text-[var(--text-main)] sm:text-lg">{title}</h2>
+        {hint && <p className="mt-1 text-xs leading-snug text-[var(--text-muted)] sm:text-sm">{hint}</p>}
       </div>
       {right}
     </div>
@@ -258,14 +258,14 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
   const noMotion = prefersReducedMotion();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       <style>{GLOW_CSS}</style>
       {/* HERO */}
       <section
         ref={heroGlow.ref}
         onMouseMove={heroGlow.onMouseMove}
         onMouseLeave={heroGlow.onMouseLeave}
-        className="relative overflow-hidden rounded-[22px] p-5 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] lg:p-6"
+        className="relative overflow-hidden rounded-[22px] p-4 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] sm:p-5 lg:p-6"
         style={{ background: 'var(--grad-hero)', ...reveal(0) }}
         aria-label="Unggah bukti"
       >
@@ -273,13 +273,13 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
         {/* Glow latar mengikuti mouse; CSS variable diwariskan dari <section>. */}
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 rounded-[22px]" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-stretch">
-          <div className="relative z-10 flex flex-col gap-6">
+        <div className="relative grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch">
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-6">
             <div style={reveal(1, 10)}>
-              <h1 className="break-words text-3xl font-semibold leading-[1.15] tracking-tight sm:text-4xl xl:text-5xl">
+              <h1 className="break-words text-2xl font-semibold leading-[1.15] tracking-tight sm:text-4xl xl:text-5xl">
                 Unggah bukti
               </h1>
-              <p className="mt-3 max-w-md text-sm leading-snug text-[color:var(--glass-text-soft)]">
+              <p className="mt-2 max-w-md text-sm leading-snug sm:mt-3 text-[color:var(--glass-text-soft)]">
                 Lampirkan atau perbarui foto bukti pada transaksi yang sudah tercatat
               </p>
             </div>
@@ -299,21 +299,21 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
               <div className="absolute -right-14 -top-16 h-56 w-56 rounded-full bg-[var(--glass-line)]" />
               <div className="absolute -bottom-20 left-6 h-52 w-52 rounded-full bg-[var(--glass-soft)]" />
             </div>
-            <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[24rem]">
+            <div className="relative grid grid-cols-2 gap-3 lg:w-[24rem]">
               <div
                 ref={tiltNota.ref}
                 onMouseMove={tiltNota.onMouseMove}
                 onMouseLeave={tiltNota.onMouseLeave}
-                className="group flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4 shadow-[var(--shadow-glass-card)] backdrop-blur-xl"
+                className="group flex min-w-0 flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-3 shadow-[var(--shadow-glass-card)] backdrop-blur-xl sm:p-4"
                 style={reveal(2, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <Paperclip className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Bukti nota
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
+                <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                   {stats.withProof}
-                  <span className="text-base text-[color:var(--glass-text-soft)]">/{stats.total}</span>
+                  <span className="text-sm text-[color:var(--glass-text-soft)] sm:text-base">/{stats.total}</span>
                 </p>
                 <div className="mt-auto pt-3">
                   <div
@@ -342,14 +342,14 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                 ref={tiltTrx.ref}
                 onMouseMove={tiltTrx.onMouseMove}
                 onMouseLeave={tiltTrx.onMouseLeave}
-                className="group flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-4 shadow-[var(--shadow-glass-card)] backdrop-blur-xl"
+                className="group flex min-w-0 flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] p-3 shadow-[var(--shadow-glass-card)] backdrop-blur-xl sm:p-4"
                 style={reveal(3, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <ArrowLeftRight className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Transaksi
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{stats.total}</p>
+                <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{stats.total}</p>
                 <div className="mt-auto pt-3">
                   <div
                     className="h-1.5 overflow-hidden rounded-full bg-[var(--glass-line)]"
@@ -372,14 +372,14 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
       </section>
 
       {transactions.length === 0 ? (
-        <section className="card" style={reveal(4)}>
+        <section className="card max-sm:!p-3" style={reveal(4)}>
           <CardHeader title="Lampirkan bukti" hint="Pilih transaksi, lalu unggah foto nota atau struk" />
           <EmptyNote>Belum ada transaksi. Catat transaksi dulu di menu Catat Pendapatan</EmptyNote>
         </section>
       ) : (
-        <section className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+        <section className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           {/* FORM */}
-          <div className="card" style={reveal(4)}>
+          <div className="card min-w-0 max-sm:!p-3" style={reveal(4)}>
             <CardHeader
               title="Lampirkan bukti"
               hint="Pilih transaksi, lalu unggah foto nota atau struk"
@@ -391,12 +391,12 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
             />
 
             {feedback.message && (
-              <Notice kind={feedback.type === 'success' ? 'success' : 'error'} className="mb-5">
+              <Notice kind={feedback.type === 'success' ? 'success' : 'error'} className="mb-4 sm:mb-5">
                 {feedback.message}
               </Notice>
             )}
 
-            <form onSubmit={handleSaveProof} className="space-y-5">
+            <form onSubmit={handleSaveProof} className="space-y-4 sm:space-y-5">
               <div>
                 <label htmlFor="trx" className={label}>
                   Transaksi tujuan
@@ -435,9 +435,9 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                       }}
                       onDragLeave={() => setDragging(false)}
                       onDrop={handleDrop}
-                      className={`group flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center transition-all duration-200 ease-[var(--ease-out)] hover:border-[color:var(--royal-400)] hover:bg-[var(--surface-hover)] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${dragging
-                          ? 'scale-[1.01] border-[color:var(--royal-400)] bg-[var(--surface-hover)]'
-                          : 'border-[var(--border-default)] bg-[var(--surface-muted)]'
+                      className={`group flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed p-6 text-center sm:p-8 transition-all duration-200 ease-[var(--ease-out)] hover:border-[color:var(--royal-400)] hover:bg-[var(--surface-hover)] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${dragging
+                        ? 'scale-[1.01] border-[color:var(--royal-400)] bg-[var(--surface-hover)]'
+                        : 'border-[var(--border-default)] bg-[var(--surface-muted)]'
                         }`}
                     >
                       <span
@@ -469,7 +469,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                     <img
                       src={proofPreview}
                       alt="Pratinjau bukti"
-                      className="max-h-56 rounded-lg bg-[var(--surface-card)] object-contain"
+                      className="max-h-48 max-w-full rounded-lg bg-[var(--surface-card)] object-contain sm:max-h-56"
                     />
                     <div className="mt-2 flex items-center justify-between gap-4 px-1 text-xs leading-4">
                       <span className="flex items-center gap-2 text-[var(--cash-in)]">
@@ -479,7 +479,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                       <button
                         type="button"
                         onClick={() => setProofPreview('')}
-                        className="rounded-md font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-link)] active:scale-95 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none"
+                        className="rounded-md font-medium text-[var(--text-muted)] transition-colors max-sm:min-h-8 max-sm:px-2 hover:text-[var(--text-link)] active:scale-95 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none"
                       >
                         Ganti
                       </button>
@@ -488,7 +488,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                 )}
               </div>
 
-              <button type="submit" disabled={isUploading} className={`${btnPrimary} w-full disabled:opacity-70`}>
+              <button type="submit" disabled={isUploading} className={`${btnPrimary} w-full disabled:opacity-70 max-sm:min-h-12`}>
                 {isUploading ? (
                   <GridSpinner size="sm" label="Mengunggah dan mengekstrak" />
                 ) : (
@@ -499,7 +499,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
           </div>
 
           {/* PERLU DICEK */}
-          <div className="card flex flex-col" style={reveal(5)}>
+          <div className="card flex min-w-0 flex-col max-sm:!p-3" style={reveal(5)}>
             <CardHeader
               title="Perlu dicek"
               hint="Transaksi tanpa bukti nota"
@@ -509,7 +509,7 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
               <div className="grid flex-1 place-items-center py-8 text-center">
                 <div className="group">
                   <Paperclip className={`mx-auto h-6 w-6 text-[var(--cash-in)] ${ICON_HOVER}`} aria-hidden="true" />
-                  <p className="mt-2 text-sm font-medium text-[var(--text-main)]">Semua transaksi punya nota</p>
+                  <p className="mt-2 text-[13px] font-medium text-[var(--text-main)] sm:text-sm">Semua transaksi punya nota</p>
                   <p className="mt-0.5 text-xs text-[var(--text-muted)]">Tidak ada yang perlu dicek.</p>
                 </div>
               </div>
@@ -520,27 +520,27 @@ export default function UploadProofPage({ transactions, onUpdateProof, onNavigat
                   return (
                     <li key={t.id}>
                       <GlowPill radius="0.5rem" active={active} className="-mx-2 w-[calc(100%+1rem)]">
-                      <button
-                        type="button"
-                        aria-pressed={active}
-                        aria-label={`Pilih ${t.title} untuk diunggah buktinya`}
-                        onClick={() => setSelectedId(t.id)}
-                        className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-left outline-none transition-all duration-200 hover:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${active ? 'bg-[var(--surface-muted)]' : ''
-                          }`}
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[var(--text-main)]">{t.title}</p>
-                          <p className="text-xs text-[var(--text-muted)]">
-                            {t.time || '-'} WIB · {t.id}
-                          </p>
-                        </div>
-                        <span
-                          className={`shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums ${t.type === 'pengeluaran' ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
+                        <button
+                          type="button"
+                          aria-pressed={active}
+                          aria-label={`Pilih ${t.title} untuk diunggah buktinya`}
+                          onClick={() => setSelectedId(t.id)}
+                          className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-left outline-none transition-all duration-200 hover:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${active ? 'bg-[var(--surface-muted)]' : ''
                             }`}
                         >
-                          {t.type === 'pengeluaran' ? '−' : '+'} {formatRupiah(t.amount)}
-                        </span>
-                      </button>
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-medium text-[var(--text-main)] sm:text-sm">{t.title}</p>
+                            <p className="text-xs text-[var(--text-muted)]">
+                              {t.time || '-'} WIB · {t.id}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 whitespace-nowrap text-[13px] font-semibold tabular-nums sm:text-sm ${t.type === 'pengeluaran' ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
+                              }`}
+                          >
+                            {t.type === 'pengeluaran' ? '−' : '+'} {formatRupiah(t.amount)}
+                          </span>
+                        </button>
                       </GlowPill>
                     </li>
                   );

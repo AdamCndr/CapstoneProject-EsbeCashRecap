@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Check, Download, LogOut, Plus, Search, User, Wallet, X } from 'lucide-react';
+import { ArrowLeft, Bell, Check, Download, LogOut, Plus, Search, User, Wallet, X } from 'lucide-react';
 import { useMouseGlow } from '../hooks/useMouseGlow';
 
 const rp = (n) => 'Rp ' + Math.abs(n || 0).toLocaleString('id-ID');
@@ -27,7 +27,7 @@ const prefersReducedMotion = () =>
 
 // Titik shift: versi cerah dari --shift-siang / --shift-pagi agar tetap terlihat di sayap biru.
 const SHIFTS = {
-  siang: { label: 'Siang', time: '14:00–21:00', dot: 'var(--royal-400)' },
+  siang: { label: 'Siang', time: '14:00–22:00', dot: 'var(--royal-400)' },
   pagi: { label: 'Pagi', time: '06:00–14:00', dot: 'var(--amber-400)' },
 };
 
@@ -40,7 +40,9 @@ const WING_SHADOW_END = 1; // kekuatan default setelah sayap diam
 // kedua sayap role itu (kiri = kanan), jadi tiap role bisa punya lebar berbeda.
 // WING_PAD = padding kiri + kanan sayap; batas atas menjaga notch + sayap muat di viewport.
 const WING_PAD = 20 + TUCK + 16;
-const WING_MAX = 'calc(50vw - 14rem)';
+const WING_MAX = 'calc(50vw - 14rem)'; // fallback sebelum lebar kolom terukur (lihat wingMax di Header)
+const NOTCH_MQ = '(min-width: 1280px)'; // = breakpoint xl Tailwind; di bawahnya header selalu mode kotak
+const MOBILE_MQ = '(max-width: 767px)'; // di bawah md Tailwind -> layout header mobile khusus
 
 // ── Deteksi background biru di bawah sayap ──────────────────────────────
 // Sayap default berwarna royal-700. Kalau elemen di bawahnya warnanya sama/mirip (termasuk
@@ -117,6 +119,7 @@ function useBlueBehind(ref, active, left) {
 
     const check = () => {
       raf = 0;
+      if (document.hidden) return; // tab di background: tidak perlu polling
       const parent = el.offsetParent;
       if (!parent || !el.offsetWidth) return; // sayap disembunyikan (< lg)
       const wing = parseColor(getComputedStyle(el).getPropertyValue('--royal-700').trim());
@@ -235,7 +238,7 @@ function WingShape({ left, w, h, onBlue, shadow }) {
 }
 
 /** Sayap ungu di kiri/kanan notch. Hanya tampil di layar lebar (lg+). */
-function Wing({ side, open, width, onMeasure, interactive = false, onClick, label, children }) {
+function Wing({ side, open, width, maxWidth = null, onMeasure, interactive = false, onClick, label, children }) {
   const left = side === 'left';
   const Tag = interactive ? 'button' : 'div';
   const ref = useRef(null);
@@ -313,7 +316,9 @@ function Wing({ side, open, width, onMeasure, interactive = false, onClick, labe
           : '[--wing:var(--royal-700)] [--wing-fg:#fff] [--wing-sub:var(--royal-100)] [--wing-chip:rgba(255,255,255,0.2)]'
         } ${interactive ? `cursor-pointer ${onBlue ? 'hover:[--wing:var(--surface-hover)]' : 'hover:[--wing:var(--royal-800)]'} ${FOCUS}` : ''}`}
       style={{
-        width: width ? `min(${width}px, ${WING_MAX})` : undefined,
+        width: width
+          ? `min(${width}px, ${maxWidth != null ? `${Math.max(maxWidth, 0)}px` : WING_MAX})`
+          : undefined,
         [left ? 'marginRight' : 'marginLeft']: -TUCK,
         [left ? 'paddingLeft' : 'paddingRight']: 20,
         [left ? 'paddingRight' : 'paddingLeft']: TUCK + 16,
@@ -549,6 +554,11 @@ function StyleThumb({ variant }) {
  * Desain header bisa dipilih dari dropdown akun:
  *   - 'notch' : menggantung + sayap kiri/kanan (default)
  *   - 'box'   : bar persegi penuh lebar layar; info kas & aksi pindah ke dalam bar
+ * Di bawah xl (< 1280px) sayap tidak muat, jadi header otomatis memakai 'box' dan
+ * opsi "Tampilan header" disembunyikan dari dropdown.
+ * Di bawah md (< 768px) header memakai layout mobile khusus: info kas/shift di kiri,
+ * ikon Cari + Notifikasi + Avatar di kanan, pencarian membuka satu baris penuh, dan aksi
+ * utama (Ekspor CSV / Catat transaksi) pindah ke dropdown akun.
  * Saat ganti gaya, gaya lama keluar dulu (sayap terselip, notch naik / bar naik),
  * lalu gaya baru masuk dengan animasinya sendiri.
  * Pilihan disimpan di localStorage. Untuk mengontrol dari luar, pakai
@@ -577,7 +587,32 @@ export default function Header({
   const [styleState, setStyleState] = useState(() => readStoredStyle() ?? defaultHeaderStyle);
   // Gaya tujuan (pilihan pengguna) vs gaya yang sedang digambar. Saat berganti, gaya lama
   // keluar dulu dengan animasinya sendiri, baru gaya baru masuk — tanpa potongan kasar.
-  const variant = (headerStyleProp ?? styleState) === 'box' ? 'box' : 'notch';
+  // Sayap notch hanya dipakai di >= xl. Di bawah itu header selalu 'box' supaya info kas
+  // dan tombol Ekspor / Catat tidak hilang.
+  const [isXl, setIsXl] = useState(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.(NOTCH_MQ).matches),
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mq = window.matchMedia(NOTCH_MQ);
+    const sync = () => setIsXl(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.(MOBILE_MQ).matches),
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mq = window.matchMedia(MOBILE_MQ);
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const preferredVariant = (headerStyleProp ?? styleState) === 'box' ? 'box' : 'notch';
+  const variant = isXl ? preferredVariant : 'box';
   const [rendered, setRendered] = useState(variant);
   const [swapping, setSwapping] = useState(false);
   const refocusRef = useRef(false);
@@ -593,6 +628,30 @@ export default function Header({
     [],
   );
   const wingW = Math.max(wingNat.left, wingNat.right);
+
+  // Lebar maksimum sayap dihitung dari ruang sisa di kolom konten (bukan 50vw), jadi tetap
+  // pas saat sidebar expanded atau search dibuka dan notch melebar.
+  // Sayap menjorok: lebar - TUCK (terselip di notch) + FLARE (lengkung luar).
+  const rootRef = useRef(null);
+  const headerRef = useRef(null);
+  const [wingMax, setWingMax] = useState(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    const hdr = headerRef.current;
+    if (!isNotch || !root || !hdr || typeof ResizeObserver === 'undefined') {
+      setWingMax(null);
+      return undefined;
+    }
+    const calc = () => {
+      const free = (root.clientWidth - hdr.offsetWidth) / 2;
+      setWingMax(Math.floor(free + TUCK - FLARE));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(root);
+    ro.observe(hdr);
+    return () => ro.disconnect();
+  }, [isNotch]);
 
   const menuRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -661,7 +720,10 @@ export default function Header({
       cancelAnimationFrame(id2);
     };
   }, [isNotch]);
-  const wingsOpen = open && wingsOn;
+  // Saat search dibuka notch melebar. Kalau sayap jadi tidak muat, sayap diselipkan sementara
+  // (bukan dipersempit), supaya tombol Ekspor tidak pernah tampil mengecil/terpotong.
+  const wingsFit = wingMax == null || wingMax >= wingW;
+  const wingsOpen = open && wingsOn && !(expanded && !wingsFit);
 
   // Tutup dropdown & search saat header disembunyikan
   useEffect(() => {
@@ -818,21 +880,266 @@ export default function Header({
         transition: `transform ${BOX_OUT}ms ${EASE_IN}, visibility 0s linear ${BOX_OUT}ms`,
       };
 
+  // ── Layout mobile (< md) ───────────────────────────────────────────────────
+  // Kiri : info yang paling sering dicek (kas bersih untuk Pemilik, shift untuk Karyawan).
+  // Kanan: tiga ikon bulat (Cari, Notifikasi, Akun) dengan ukuran sentuh 40px.
+  // Cari : membuka satu baris penuh (tombol kembali + input), bukan melebar di antara ikon lain.
+  // Akun : dropdown memuat aksi utama (Ekspor CSV / Catat transaksi) dan Keluar.
+  if (isMobile) {
+    // Tanggal dipersingkat (tanpa tahun) supaya label tidak terpotong di layar sempit.
+    const shortDate = (l) => (l === 'semua tanggal' ? 'semua' : String(l || 'hari ini').replace(/\s\d{4}$/, ''));
+    const slot = isOwner
+      ? { label: `Kas bersih · ${shortDate(ownerStats?.dateLabel)}`, value: kasValue, negative: kasNegative }
+      : { label: `Shift ${shift.label}`, value: shift.time, negative: false };
+
+    // Di layar sangat sempit (<= 360px) ikon sedikit diperkecil.
+    const iconBtn = `relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-[transform,box-shadow,color] duration-200 active:scale-95 max-[360px]:h-8 max-[360px]:w-8 ${tone.notif} ${tone.accent} ${FOCUS}`;
+
+    return (
+      <div
+        ref={rootRef}
+        data-header-root
+        data-variant="box"
+        className={`sticky top-0 z-40 w-full ${className}`}
+      >
+        <style>{HEADER_CSS}</style>
+        <header
+          ref={headerRef}
+          className="pointer-events-auto relative motion-reduce:!transition-none"
+          style={{ willChange: 'transform', ...headerMotion }}
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[2]" style={{ filter: tone.shadow }}>
+            <div
+              className={`absolute inset-0 rounded-b-[20px] border border-t-0 ${tone.barBorder}`}
+              style={{ background: tone.shell }}
+            />
+          </div>
+
+          <div className="relative z-[3] px-3.5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+            {expanded ? (
+              /* ── Mode cari: satu baris penuh ── */
+              <div className="hdr-swap flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Tutup pencarian"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => collapse(true)}
+                  className={iconBtn}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <div className="relative min-w-0 flex-1">
+                  <label htmlFor="header-search" className="sr-only">
+                    Cari transaksi
+                  </label>
+                  <Search
+                    className={`pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 ${tone.fieldIcon}`}
+                  />
+                  <input
+                    id="header-search"
+                    ref={inputRef}
+                    type="search"
+                    enterKeyHint="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery?.(e.target.value)}
+                    onBlur={() => !searchQuery && collapse(false)}
+                    onKeyDown={(e) => e.key === 'Escape' && collapse(true)}
+                    placeholder="Cari transaksi, kategori…"
+                    style={{ colorScheme: tone.scheme }}
+                    // text-base (16px) mencegah iOS Safari zoom otomatis saat input difokuskan
+                    className={`h-9 w-full rounded-full border-0 pl-11 text-base outline-none transition-[background-color,box-shadow] duration-200 [&::-webkit-search-cancel-button]:appearance-none ${searchQuery ? 'pr-11' : 'pr-4'
+                      } ${tone.field} ${tone.fieldRing}`}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      aria-label="Hapus pencarian"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSearchQuery?.('');
+                        inputRef.current?.focus();
+                      }}
+                      className={`hdr-fade absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full transition-colors duration-200 ${tone.button} ${FOCUS}`}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* ── Mode normal ── */
+              <div className="flex items-center gap-3">
+                {showWings && (
+                  <div
+                    className="hdr-box-item min-w-0 flex-1"
+                    style={{ '--dx': '-14px', '--d': '200ms' }}
+                  >
+                    <span className="block min-w-0 leading-tight">
+                      <span className={`block truncate text-[11px] ${tone.role}`}>{slot.label}</span>
+                      <span
+                        className={`mt-0.5 block truncate text-sm font-semibold tabular-nums ${slot.negative ? tone.negative : tone.name}`}
+                      >
+                        {slot.value}
+                      </span>
+                    </span>
+                  </div>
+                )}
+
+                <div
+                  className={`hdr-box-item flex shrink-0 items-center gap-2.5 ${showWings ? '' : 'ml-auto'}`}
+                  style={{ '--dx': '14px', '--d': '280ms' }}
+                >
+                  {/* Cari (ikon saja) */}
+                  <button
+                    ref={searchBtnRef}
+                    type="button"
+                    onClick={() => setExpanded(true)}
+                    aria-label={searchQuery ? `Cari transaksi, filter aktif: ${searchQuery}` : 'Cari transaksi'}
+                    className={iconBtn}
+                  >
+                    <Search className="h-4 w-4" />
+                    {/* Titik penanda: pencarian masih aktif walau input ditutup */}
+                    {searchQuery && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 bg-[var(--amber-500)]"
+                        style={{ borderColor: tone.shell }}
+                      />
+                    )}
+                  </button>
+
+                  {/* Notifikasi */}
+                  <button
+                    type="button"
+                    onClick={onNotificationsClick}
+                    aria-label={unreadCount > 0 ? `Notifikasi, ${unreadCount} belum dibaca` : 'Notifikasi'}
+                    className={`hdr-notif group ${iconBtn}`}
+                  >
+                    <span className="hdr-bell grid place-items-center" data-unread={unreadCount > 0}>
+                      <Bell className="h-4 w-4" />
+                    </span>
+                    {unreadCount > 0 && (
+                      <span
+                        key={unreadCount}
+                        aria-hidden="true"
+                        className="hdr-pop absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px]"
+                      >
+                        <span className="hdr-ring absolute inset-0 rounded-full bg-[var(--amber-500)]" />
+                        <span
+                          className="relative flex h-full min-w-[18px] items-center justify-center rounded-full border-2 bg-[var(--amber-500)] px-1 text-[10px] font-semibold leading-none text-slate-900"
+                          style={{ borderColor: tone.shell }}
+                        >
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Akun */}
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      ref={menuButtonRef}
+                      type="button"
+                      onClick={() => setShowMenu((prev) => !prev)}
+                      aria-haspopup="menu"
+                      aria-expanded={showMenu}
+                      aria-controls="header-account-menu"
+                      aria-label={`Menu akun ${userName}`}
+                      className={`group rounded-full ${FOCUS}`}
+                    >
+                      <span
+                        className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--royal-700)] text-xs font-semibold text-[var(--text-inverse)] transition-[box-shadow,transform] duration-300 group-active:scale-95 max-[360px]:h-8 max-[360px]:w-8 ${showMenu ? 'ring-2' : 'ring-0'} ${tone.avatarRing}`}
+                      >
+                        {hasName ? getInitials(userName) : <User className="h-4 w-4" />}
+                      </span>
+                    </button>
+
+                    {(showMenu || menuVisible) && (
+                      <div
+                        id="header-account-menu"
+                        role="menu"
+                        aria-label="Menu akun"
+                        data-state={showMenu ? 'open' : 'closed'}
+                        onKeyDown={onMenuKeyDown}
+                        className={`hdr-menu absolute right-0 top-full z-50 mt-3 w-[min(17rem,calc(100vw-1.5rem))] rounded-[20px] border p-1.5 ${tone.menu}`}
+                      >
+                        <div
+                          role="none"
+                          className={`hdr-menu-item flex items-center gap-3 border-b px-2.5 pb-3 pt-2.5 ${tone.menuHead}`}
+                          style={{ '--i': 0 }}
+                        >
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--royal-700)] text-xs font-semibold text-[var(--text-inverse)]">
+                            {hasName ? getInitials(userName) : <User className="h-4 w-4" />}
+                          </span>
+                          <span className="min-w-0 leading-tight">
+                            <span className={`block truncate text-sm font-medium ${tone.name}`}>{userName}</span>
+                            {userRole && <span className={`mt-0.5 block text-xs ${tone.role}`}>{userRole}</span>}
+                          </span>
+                        </div>
+
+                        {action && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setShowMenu(false);
+                              action.onClick?.();
+                            }}
+                            style={{ '--i': 1 }}
+                            className={`hdr-menu-item mt-1.5 flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left text-[13px] transition-colors duration-200 focus-visible:outline-none ${tone.menuItem}`}
+                          >
+                            <action.Icon className="h-4 w-4 shrink-0" />
+                            <span>{action.label}</span>
+                          </button>
+                        )}
+
+                        {onLogout && (
+                          <>
+                            <div role="separator" className={`mx-2.5 my-1 h-px ${tone.divider}`} />
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setShowMenu(false);
+                                onLogout();
+                              }}
+                              style={{ '--i': 2 }}
+                              className={`hdr-menu-item flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-[13px] transition-colors duration-200 focus-visible:outline-none ${tone.logout}`}
+                            >
+                              <LogOut className="h-4 w-4 shrink-0" />
+                              <span>Ganti akun / Keluar</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+      </div>
+    );
+  }
+
   return (
     <div
+      ref={rootRef}
       data-header-root
       data-variant={isNotch ? 'notch' : 'box'}
       className={`${isNotch ? 'pointer-events-none flex justify-center' : ''} sticky top-0 z-40 w-full ${className}`}
     >
       <style>{HEADER_CSS}</style>
       <header
-        className={`pointer-events-auto relative motion-reduce:!transition-none ${isNotch ? 'max-w-[calc(100vw-3.5rem)]' : 'w-full'
+        ref={headerRef}
+        className={`pointer-events-auto relative motion-reduce:!transition-none ${isNotch ? 'max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-3.5rem)]' : 'w-full'
           }`}
         style={{ willChange: 'transform', ...headerMotion }}
       >
         {/* Sayap — hanya mode notch (di DOM lebih dulu supaya tergambar di bawah notch tengah) */}
         {isNotch && showWings && (
-          <Wing side="left" open={wingsOpen} width={wingW} onMeasure={reportWing}>
+          <Wing side="left" open={wingsOpen} width={wingW} maxWidth={wingMax} onMeasure={reportWing}>
             <span className="min-w-0 leading-tight">
               <span className="block truncate text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">
                 {kasLabel}
@@ -849,12 +1156,13 @@ export default function Header({
             side="right"
             open={wingsOpen}
             width={wingW}
+            maxWidth={wingMax}
             onMeasure={reportWing}
             interactive
             onClick={action.onClick}
             label={action.aria}
           >
-            <span className="text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">{action.label}</span>
+            <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--wing-fg)] transition-colors duration-300">{action.label}</span>
             <GlowChip>
               <action.Icon className={`h-4 w-4 transition-transform duration-300 ${action.iconAnim}`} />
             </GlowChip>
@@ -876,12 +1184,12 @@ export default function Header({
         </div>
 
         {/* Isi */}
-        <div className={`relative z-[3] ${isNotch ? 'px-3 pb-3 pt-2.5 sm:px-4' : 'px-3 py-3 sm:px-6'}`}>
+        <div className={`relative z-[3] ${isNotch ? 'px-3 pb-3 pt-2.5 sm:px-4' : 'px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] sm:px-6'}`}>
           <div className={`flex items-center gap-2 sm:gap-3 ${isNotch ? 'justify-center' : 'justify-end'}`}>
             {/* Mode kotak: info kas di kiri bar, aksi utama di sisi kanan */}
             {!isNotch && showWings && (
               <div
-                className="hdr-box-item mr-auto hidden min-w-0 items-center gap-3 md:flex"
+                className={`hdr-box-item mr-auto hidden min-w-0 items-center gap-3 md:flex ${expanded ? 'max-lg:!hidden' : ''}`}
                 style={{ '--dx': '-14px', '--d': '220ms' }}
               >
                 <span aria-hidden="true" className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone.chip}`}>
@@ -900,12 +1208,15 @@ export default function Header({
               </div>
             )}
             {!isNotch && showWings && action && (
-              <div className="hdr-box-item shrink-0" style={{ '--dx': '14px', '--d': '300ms' }}>
+              <div
+                className="hdr-box-item shrink-0"
+                style={{ '--dx': '14px', '--d': '300ms' }}
+              >
                 <button
                   type="button"
                   onClick={action.onClick}
                   aria-label={action.aria}
-                  className={`group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--royal-700)] text-sm font-semibold text-[var(--text-inverse)] ring-1 ring-inset ring-white/15 transition-[transform,filter] duration-200 hover:brightness-110 active:scale-[0.97] md:w-auto md:px-4 ${FOCUS}`}
+                  className={`group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[var(--royal-700)] text-sm font-semibold text-[var(--text-inverse)] ring-1 ring-inset ring-white/15 transition-[transform,filter] duration-200 hover:brightness-110 active:scale-[0.97] md:w-auto md:px-4 ${FOCUS}`}
                 >
                   <action.Icon className={`h-4 w-4 transition-transform duration-300 ${action.iconAnim}`} />
                   <span className="hidden md:inline">{action.label}</span>
@@ -915,7 +1226,7 @@ export default function Header({
 
             {/* Pencarian: collapse -> expand */}
             <div
-              className={`transition-[width] duration-300 ease-out motion-reduce:transition-none ${expanded ? 'w-44 sm:w-72 lg:w-80' : 'w-[5.5rem] sm:w-[7.25rem]'
+              className={`transition-[width] duration-300 ease-out motion-reduce:transition-none ${expanded ? 'w-64 lg:w-80' : 'w-[5.25rem] xl:w-[7.25rem]'
                 }`}
             >
               {expanded ? (
@@ -936,7 +1247,7 @@ export default function Header({
                     onKeyDown={(e) => e.key === 'Escape' && collapse(true)}
                     placeholder="Cari transaksi, kategori, metode..."
                     style={{ colorScheme: tone.scheme }}
-                    className={`h-10 w-full rounded-full border-0 pl-11 text-sm outline-none transition-[background-color,box-shadow] duration-200 [&::-webkit-search-cancel-button]:appearance-none ${searchQuery ? 'pr-11' : 'pr-4 sm:pr-14'
+                    className={`h-10 w-full rounded-full border-0 pl-11 text-sm outline-none transition-[background-color,box-shadow] duration-200 [&::-webkit-search-cancel-button]:appearance-none ${searchQuery ? 'pr-11' : 'pr-4 xl:pr-14'
                       } ${tone.field} ${tone.fieldRing}`}
                   />
                   {searchQuery ? (
@@ -955,7 +1266,7 @@ export default function Header({
                   ) : (
                     <kbd
                       aria-hidden="true"
-                      className={`hdr-fade pointer-events-none absolute right-3 top-1/2 hidden h-5 -translate-y-1/2 items-center rounded-md px-1.5 font-sans text-[11px] font-medium sm:inline-flex ${tone.kbd}`}
+                      className={`hdr-fade pointer-events-none absolute right-3 top-1/2 hidden h-5 -translate-y-1/2 items-center rounded-md px-1.5 font-sans text-[11px] font-medium xl:inline-flex ${tone.kbd}`}
                     >
                       Esc
                     </kbd>
@@ -976,7 +1287,7 @@ export default function Header({
                   <span>Cari</span>
                   <kbd
                     aria-hidden="true"
-                    className={`hidden h-5 items-center rounded-md px-1.5 font-sans text-[11px] font-medium sm:inline-flex ${tone.kbd}`}
+                    className={`hidden h-5 items-center rounded-md px-1.5 font-sans text-[11px] font-medium xl:inline-flex ${tone.kbd}`}
                   >
                     /
                   </kbd>
@@ -1013,7 +1324,10 @@ export default function Header({
               )}
             </button>
 
-            <span aria-hidden="true" className={`h-7 w-px shrink-0 ${tone.divider}`} />
+            <span
+              aria-hidden="true"
+              className={`h-7 w-px shrink-0 ${tone.divider}`}
+            />
 
             {/* Profil */}
             <div className="relative" ref={menuRef}>
@@ -1063,41 +1377,43 @@ export default function Header({
                       {userRole && <span className={`mt-0.5 block text-xs ${tone.role}`}>{userRole}</span>}
                     </span>
                   </div>
-                  <div
-                    role="group"
-                    aria-labelledby="header-style-label"
-                    className="hdr-menu-item px-0.5 pb-0.5 pt-2.5"
-                    style={{ '--i': 1 }}
-                  >
-                    <span id="header-style-label" className={`block px-2.5 pb-1.5 text-xs ${tone.role}`}>
-                      Tampilan header
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      {HEADER_STYLES.map((opt) => {
-                        const active = variant === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={active}
-                            onClick={() => chooseStyle(opt.id)}
-                            className={`flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2 text-left text-sm transition-colors duration-200 focus-visible:outline-none ${tone.menuItem} ${active ? tone.menuItemOn : ''}`}
-                          >
-                            <span className={`grid h-8 w-11 shrink-0 place-items-center rounded-lg ${tone.thumb}`}>
-                              <StyleThumb variant={opt.id} />
-                            </span>
-                            <span className="min-w-0 flex-1 leading-tight">
-                              <span className="block font-medium">{opt.label}</span>
-                              <span className={`mt-0.5 block truncate text-xs ${tone.role}`}>{opt.hint}</span>
-                            </span>
-                            {active && <Check aria-hidden="true" className={`h-4 w-4 shrink-0 ${tone.check}`} />}
-                          </button>
-                        );
-                      })}
+                  {isXl && (
+                    <div
+                      role="group"
+                      aria-labelledby="header-style-label"
+                      className="hdr-menu-item px-0.5 pb-0.5 pt-2.5"
+                      style={{ '--i': 1 }}
+                    >
+                      <span id="header-style-label" className={`block px-2.5 pb-1.5 text-xs ${tone.role}`}>
+                        Tampilan header
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        {HEADER_STYLES.map((opt) => {
+                          const active = variant === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={active}
+                              onClick={() => chooseStyle(opt.id)}
+                              className={`flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2 text-left text-sm transition-colors duration-200 focus-visible:outline-none ${tone.menuItem} ${active ? tone.menuItemOn : ''}`}
+                            >
+                              <span className={`grid h-8 w-11 shrink-0 place-items-center rounded-lg ${tone.thumb}`}>
+                                <StyleThumb variant={opt.id} />
+                              </span>
+                              <span className="min-w-0 flex-1 leading-tight">
+                                <span className="block font-medium">{opt.label}</span>
+                                <span className={`mt-0.5 block truncate text-xs ${tone.role}`}>{opt.hint}</span>
+                              </span>
+                              {active && <Check aria-hidden="true" className={`h-4 w-4 shrink-0 ${tone.check}`} />}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                  {onLogout && <div role="separator" className={`mx-2.5 my-1.5 h-px ${tone.divider}`} />}
+                  )}
+                  {isXl && onLogout && <div role="separator" className={`mx-2.5 my-1.5 h-px ${tone.divider}`} />}
                   {onLogout && (
                     <button
                       type="button"

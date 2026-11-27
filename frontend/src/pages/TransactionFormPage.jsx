@@ -75,7 +75,7 @@ const TYPE_OPTIONS = [
 // Jam shift sama dengan kontrol shift di Dashboard
 const SHIFT_META = {
   pagi: { label: 'Pagi', range: '06:00–14:00', Icon: Sun },
-  siang: { label: 'Siang', range: '14:00–21:00', Icon: Sunset }
+  siang: { label: 'Siang', range: '14:00–22:00', Icon: Sunset }
 };
 
 const QUICK_AMOUNTS = [5000, 10000, 20000, 50000, 100000];
@@ -88,14 +88,14 @@ const focusRing =
 const tagClass =
   'rounded-lg border border-[var(--border-default)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]';
 // Tombol di hero: class identik dengan tombol kalender (DateField) di hero Dashboard.
-const heroControl = `group relative flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl bg-[var(--surface-app)] px-4 py-1.5 text-base font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none`;
+const heroControl = `group relative flex min-h-12 sm:min-h-14 max-sm:w-full cursor-pointer items-center gap-3 rounded-2xl bg-[var(--surface-app)] px-3.5 sm:px-4 py-1.5 text-sm sm:text-base font-semibold text-[var(--text-main)] shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none`;
 // Kartu kaca di hero: sama persis dengan metrik Dashboard.
 const glassCard =
-  'rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-4';
+  'rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-3 sm:p-4';
 const textareaField = `w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2.5 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:border-[color:var(--royal-400)] focus:bg-[var(--surface-card)] focus:outline-none focus:ring-2 focus:ring-[color:var(--royal-300)] motion-reduce:transition-none ${motion}`;
 
 const EASE = 'ease-[cubic-bezier(0.22,1,0.36,1)]';
-const amountField = `h-14 w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] pr-4 pl-14 text-2xl font-semibold tabular-nums text-[var(--text-main)] placeholder:text-[var(--text-muted-alt)] focus:border-[color:var(--royal-400)] focus:bg-[var(--surface-card)] focus:outline-none focus:ring-2 focus:ring-[color:var(--royal-300)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none`;
+const amountField = `h-12 sm:h-14 w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] pr-4 pl-14 text-xl sm:text-2xl font-semibold tabular-nums text-[var(--text-main)] placeholder:text-[var(--text-muted-alt)] focus:border-[color:var(--royal-400)] focus:bg-[var(--surface-card)] focus:outline-none focus:ring-2 focus:ring-[color:var(--royal-300)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none`;
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -144,7 +144,7 @@ function TypeSwitch({ value, onChange, options, ariaLabel }) {
       ref={wrapRef}
       role="group"
       aria-label={ariaLabel}
-      className="relative flex min-h-14 w-full items-stretch gap-1 rounded-2xl bg-[var(--surface-app)] p-1.5 shadow-[var(--shadow-inset-hero)]"
+      className="relative flex min-h-12 sm:min-h-14 w-full items-stretch gap-1 rounded-2xl bg-[var(--surface-app)] p-1.5 shadow-[var(--shadow-inset-hero)]"
     >
       <span
         aria-hidden="true"
@@ -173,7 +173,7 @@ function TypeSwitch({ value, onChange, options, ariaLabel }) {
             className={`relative z-10 flex flex-1 flex-col items-center justify-center rounded-xl px-3 py-1.5 leading-tight outline-none transition-[color,background-color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 motion-reduce:transition-none sm:px-5 ${active ? 'text-[var(--text-inverse)]' : 'text-[var(--text-main)]'
               }`}
           >
-            <span className="text-sm font-semibold">{opt.label}</span>
+            <span className="text-xs sm:text-sm font-semibold">{opt.label}</span>
             <span
               className={`text-[11px] whitespace-nowrap tabular-nums transition-colors duration-200 ${active ? 'text-[color:var(--glass-text-soft)]' : 'text-[var(--text-muted-alt)]'
                 }`}
@@ -204,6 +204,8 @@ const GLOW_CSS = `
 .glow-field:focus-within::after,.glow-field:has(button[aria-haspopup][aria-expanded="true"])::after{opacity:1;--gr:calc(var(--gd,3000px)*2.6);padding:2px}
 .glow-field :is(input,textarea,select):not([type=hidden]):focus,.glow-field button[aria-haspopup][aria-expanded="true"],.glow-field button[aria-haspopup]:focus{border:1px solid transparent!important;box-shadow:none!important;outline:none!important}
 .glow-pill :is(input,textarea,select):not([type=hidden]){display:block}
+@media (max-width:639px){.glow-pill :is(input,textarea):not([type=hidden]):not(#amount){font-size:13px}}
+@supports (-webkit-touch-callout:none){@media (max-width:639px){.glow-pill :is(input,textarea):not([type=hidden]):not(#amount){font-size:16px}}}
 .glow-pill :is(input,textarea,select):not([type=hidden]),.glow-pill button[aria-haspopup]{background-color:var(--surface-card)!important;border-radius:var(--pr,.75rem)!important}
 .glow-pill :is(input,textarea,select):not([type=hidden]):not(:focus),.glow-pill button[aria-haspopup]:not([aria-expanded="true"]):not(:focus){border:1px solid var(--border-default)!important;box-shadow:none!important}
 .glow-pill button[aria-haspopup]:hover:not(:active){transform:none!important;translate:none!important}
@@ -304,7 +306,7 @@ const POP_GAP = 6;
 const popSurface =
   'rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[0_20px_44px_-14px_rgba(15,23,42,0.35)]';
 // Ukuran teks dropdown & opsi — ubah di satu tempat ini
-const SELECT_TEXT = 'text-[15px]';
+const SELECT_TEXT = 'text-[13px] sm:text-[15px]';
 const triggerBase = `group flex h-10 w-full cursor-pointer items-center gap-2.5 border border-[var(--border-default)] px-3 text-left font-medium text-[var(--text-main)] outline-none transition-[border-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none ${SELECT_TEXT}`;
 const triggerOpen = 'border-[color:var(--royal-400)] ring-2 ring-[color:var(--royal-300)]';
 
@@ -494,10 +496,10 @@ function CategorySelect({ id, value, options, onChange, ariaLabel }) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => choose(opt)}
               className={`group flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 motion-reduce:transition-none ${SELECT_TEXT} ${sel
-                  ? 'bg-[var(--royal-50)] font-semibold text-[var(--royal-700)]'
-                  : i === active
-                    ? 'bg-[var(--surface-muted)] text-[var(--text-main)]'
-                    : 'text-[var(--text-main)]'
+                ? 'bg-[var(--royal-50)] font-semibold text-[var(--royal-700)]'
+                : i === active
+                  ? 'bg-[var(--surface-muted)] text-[var(--text-main)]'
+                  : 'text-[var(--text-main)]'
                 }`}
             >
               <span className="min-w-0 truncate">{opt.label}</span>
@@ -555,9 +557,9 @@ function TimeColumn({ label, values, value, onPick, listRef }) {
                 data-v={v}
                 tabIndex={sel ? 0 : -1}
                 onClick={() => onPick(v)}
-                className={`flex h-10 w-full items-center justify-center rounded-xl text-[15px] tabular-nums outline-none transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 motion-reduce:transition-none ${sel
-                    ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)]'
-                    : 'text-[var(--text-main)] hover:bg-[var(--surface-muted)]'
+                className={`flex h-10 w-full items-center justify-center rounded-xl text-[13px] sm:text-[15px] tabular-nums outline-none transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 motion-reduce:transition-none ${sel
+                  ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)]'
+                  : 'text-[var(--text-main)] hover:bg-[var(--surface-muted)]'
                   }`}
               >
                 {v}
@@ -593,7 +595,7 @@ function TimePanel({ value, onChange, onDone }) {
 
   return (
     <div className="p-4">
-      <div className="flex items-baseline justify-center gap-1 pb-3 text-4xl font-semibold tracking-tight text-[var(--text-main)] tabular-nums">
+      <div className="flex items-baseline justify-center gap-1 pb-3 text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-main)] tabular-nums">
         <span key={`h${hh}`} className="tick">{hh}</span>
         <span className="text-[var(--text-muted-alt)]">:</span>
         <span key={`m${mm}`} className="tick">{mm}</span>
@@ -742,14 +744,14 @@ const STAR_PATH =
   'M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z';
 
 // Tombol simpan dengan efek bintang: bintang meledak keluar saat hover.
-function SparkleSaveButton({ saved }) {
+function SparkleSaveButton({ saved, block = false }) {
   return (
     <>
       <style>{SPARKLE_CSS}</style>
       <button
         type="submit"
         form="transaction-form"
-        className="group sparkle-btn shrink-0"
+        className={`group sparkle-btn shrink-0${block ? ' w-full' : ''}`}
       >
         <span className="grid place-items-center">
           <span
@@ -783,10 +785,10 @@ function SparkleSaveButton({ saved }) {
 // Header kartu: sama dengan CardHeader di Dashboard (judul 18px semibold, subjudul 14px muted).
 function CardHeader({ title, hint: hintText, right }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+    <div className="mb-4 sm:mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
       <div className="min-w-[11rem] flex-1">
-        <h2 className="text-lg leading-snug font-semibold text-[var(--text-main)]">{title}</h2>
-        {hintText && <p className="mt-1 text-sm leading-snug text-[var(--text-muted)]">{hintText}</p>}
+        <h2 className="text-base sm:text-lg leading-snug font-semibold text-[var(--text-main)]">{title}</h2>
+        {hintText && <p className="mt-1 text-xs sm:text-sm leading-snug text-[var(--text-muted)]">{hintText}</p>}
       </div>
       {right}
     </div>
@@ -917,7 +919,7 @@ export default function TransactionFormPage({
   const needsProof = form.paymentMethod !== 'tunai' && !proofPreview;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       <style>{GLOW_CSS + POP_CSS}</style>
 
       {/* HERO SECTION */}
@@ -925,7 +927,7 @@ export default function TransactionFormPage({
         ref={heroGlow.ref}
         onMouseMove={heroGlow.onMouseMove}
         onMouseLeave={heroGlow.onMouseLeave}
-        className="relative overflow-hidden rounded-[22px] p-5 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] lg:p-6"
+        className="relative overflow-hidden rounded-[22px] p-4 sm:p-5 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] lg:p-6"
         style={{ background: 'var(--grad-hero)', ...reveal(0) }}
         aria-label="Catat transaksi baru"
       >
@@ -940,25 +942,25 @@ export default function TransactionFormPage({
         </div>
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 rounded-[22px]" />
 
-        <div className="relative grid gap-6 xl:grid-cols-[1fr_42rem] xl:items-stretch">
+        <div className="relative grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_42rem] xl:items-stretch">
           {/* Kiri: judul halaman + pintasan */}
-          <div className="relative z-10 flex flex-col gap-6">
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-6">
             <div className="flex flex-1 flex-col justify-center">
-              <h1 className="text-3xl leading-[1.15] font-semibold tracking-tight sm:text-4xl lg:text-5xl xl:text-6xl">
+              <h1 className="text-2xl leading-[1.15] font-semibold tracking-tight sm:text-4xl lg:text-5xl xl:text-6xl">
                 Catat Transaksi
               </h1>
             </div>
 
-            <div className="mt-auto flex flex-wrap items-end gap-3">
+            <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               {onNavigateToOcr && (
                 <button type="button" onClick={onNavigateToOcr} className={heroControl}>
-                  <ScanText className={`h-5 w-5 shrink-0 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
+                  <ScanText className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
                   Simulasi OCR AI
                 </button>
               )}
               {onNavigateToHistory && (
                 <button type="button" onClick={onNavigateToHistory} className={heroControl}>
-                  <History className={`h-5 w-5 shrink-0 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
+                  <History className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
                   Lihat riwayat
                   <ArrowRight className={`h-4 w-4 shrink-0 text-[var(--text-muted)] ${ICON_HOVER}`} aria-hidden="true" />
                 </button>
@@ -967,19 +969,19 @@ export default function TransactionFormPage({
           </div>
 
           {/* Kanan: tiga kartu kaca dalam satu baris */}
-          <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="relative grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3">
             {/* Nominal */}
             <div
               ref={tiltAmount.ref}
               onMouseMove={tiltAmount.onMouseMove}
               onMouseLeave={tiltAmount.onMouseLeave}
-              className={`group ${glassCard} flex flex-col`}
+              className={`group ${glassCard} col-span-2 flex flex-col sm:col-span-1`}
             >
               <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                 <Wallet className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                 Nominal input
               </p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight break-words tabular-nums">
+              <p className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight break-words tabular-nums">
                 {form.amount ? rp(form.amount) : 'Rp 0'}
               </p>
               <div className="mt-auto pt-3">
@@ -1014,7 +1016,7 @@ export default function TransactionFormPage({
                 <ShiftIcon className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                 Shift kerja
               </p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight">{shiftMeta.label}</p>
+              <p className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">{shiftMeta.label}</p>
               <p className="mt-auto pt-3 text-xs text-[color:var(--glass-text-soft)] tabular-nums">
                 {shiftMeta.range} WIB
               </p>
@@ -1031,7 +1033,7 @@ export default function TransactionFormPage({
                 <Paperclip className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                 Bukti nota
               </p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight">
+              <p className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">
                 {proofPreview ? 'Terlampir' : 'Belum ada'}
               </p>
               <p
@@ -1068,16 +1070,16 @@ export default function TransactionFormPage({
       )}
 
       {/* MAIN TWO-COLUMN LAYOUT */}
-      <div className="grid gap-5 lg:grid-cols-[1.45fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         {/* KOLOM KIRI: FORMULIR INPUT TRANSAKSI */}
         <section className="card" style={reveal(1)}>
           <CardHeader
             title="Formulir transaksi"
             hint="Pastikan nominal dan metode pembayaran sesuai bukti transaksi fisik atau digital."
-            right={<SparkleSaveButton saved={saved} />}
+            right={<div className="hidden sm:block"><SparkleSaveButton saved={saved} /></div>}
           />
 
-          <form id="transaction-form" onSubmit={handleSubmit} noValidate className="space-y-5">
+          <form id="transaction-form" onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-5">
             {/* JENIS KAS */}
             <div>
               <p className={label}>Jenis kas</p>
@@ -1090,9 +1092,9 @@ export default function TransactionFormPage({
             </div>
 
             {/* METODE PEMBAYARAN */}
-            <div className="border-t border-[var(--border-default)] pt-5">
+            <div className="border-t border-[var(--border-default)] pt-4 sm:pt-5">
               <p className={label}>Metode pembayaran</p>
-              <fieldset className="grid grid-cols-3 gap-3">
+              <fieldset className="grid grid-cols-3 gap-2 sm:gap-3">
                 <legend className="sr-only">Metode pembayaran</legend>
                 {METHOD_OPTIONS.map((m) => {
                   const active = form.paymentMethod === m.id;
@@ -1105,7 +1107,7 @@ export default function TransactionFormPage({
                       className={`h-full transition-transform duration-300 ${EASE} hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] motion-reduce:transition-none`}
                     >
                       <label
-                        className={`group/m relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border p-3.5 text-center text-xs transition-all duration-300 ${EASE} motion-reduce:transition-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
+                        className={`group/m relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 sm:gap-2.5 rounded-xl border p-2.5 sm:p-3.5 text-center text-xs transition-all duration-300 ${EASE} motion-reduce:transition-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--royal-300)] ${active
                           ? 'border-transparent bg-[var(--royal-50)] font-semibold text-[var(--royal-700)]'
                           : 'border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-muted)]'
                           }`}
@@ -1126,7 +1128,7 @@ export default function TransactionFormPage({
                           <Check className="h-3 w-3" strokeWidth={3} />
                         </span>
                         <span
-                          className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 ${EASE} motion-reduce:transition-none ${active
+                          className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl transition-all duration-300 ${EASE} motion-reduce:transition-none ${active
                             ? 'bg-[var(--royal-600)] text-[var(--text-inverse)]'
                             : 'bg-[var(--surface-muted)] text-[var(--royal-600)] group-hover/m:scale-105'
                             }`}
@@ -1142,7 +1144,7 @@ export default function TransactionFormPage({
             </div>
 
             {/* DETAIL TRANSAKSI */}
-            <div className="space-y-4 border-t border-[var(--border-default)] pt-5">
+            <div className="space-y-4 border-t border-[var(--border-default)] pt-4 sm:pt-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field
                   htmlFor="title"
@@ -1224,7 +1226,7 @@ export default function TransactionFormPage({
                     <button
                       type="button"
                       onClick={() => handleAddQuickAmount(amt)}
-                      className={`rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-2.5 py-1 text-xs font-medium text-[var(--text-main)] ${focusRing}`}
+                      className={`rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-2.5 py-1.5 sm:py-1 text-xs font-medium text-[var(--text-main)] ${focusRing}`}
                     >
                       +{amt >= 1000 ? `${amt / 1000}k` : amt}
                     </button>
@@ -1241,7 +1243,7 @@ export default function TransactionFormPage({
                     onClick={() => setValue('amount', '')}
                     tabIndex={Number(form.amount) > 0 ? 0 : -1}
                     aria-hidden={!(Number(form.amount) > 0)}
-                    className={`rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-2.5 py-1 text-xs font-medium text-[var(--cash-out)] ${focusRing}`}
+                    className={`rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-2.5 py-1.5 sm:py-1 text-xs font-medium text-[var(--cash-out)] ${focusRing}`}
                   >
                     Reset
                   </button>
@@ -1250,7 +1252,7 @@ export default function TransactionFormPage({
             </div>
 
             {/* WAKTU & CATATAN */}
-            <div className="space-y-4 border-t border-[var(--border-default)] pt-5">
+            <div className="space-y-4 border-t border-[var(--border-default)] pt-4 sm:pt-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field htmlFor="date" text="Tanggal">
                   <DateField
@@ -1291,11 +1293,15 @@ export default function TransactionFormPage({
                 />
               </Field>
             </div>
+            {/* Mobile: tombol simpan di akhir form (yang di header kartu disembunyikan) */}
+            <div className="sm:hidden">
+              <SparkleSaveButton saved={saved} block />
+            </div>
           </form>
         </section>
 
         {/* KOLOM KANAN: BUKTI & PRATINJAU STRUK */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-3 sm:space-y-5">
           <section className="card" style={reveal(2)}>
             <CardHeader
               title="Bukti transaksi"
@@ -1314,13 +1320,13 @@ export default function TransactionFormPage({
                 />
                 <label
                   htmlFor="proofUpload"
-                  className="group flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-[var(--border-default)] bg-[var(--surface-muted)] p-6 text-center transition-colors hover:border-[color:var(--royal-500)] peer-focus-visible:border-[color:var(--royal-400)] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none"
+                  className="group flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-[var(--border-default)] bg-[var(--surface-muted)] p-5 sm:p-6 text-center transition-colors hover:border-[color:var(--royal-500)] peer-focus-visible:border-[color:var(--royal-400)] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none"
                 >
                   <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-card)] text-[var(--royal-600)] shadow-[var(--shadow-royal-card)]">
                     <Camera className={`h-6 w-6 ${ICON_HOVER}`} aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-[var(--text-main)]">
+                    <span className="block text-[13px] sm:text-sm font-semibold text-[var(--text-main)]">
                       Pilih foto bukti atau seret ke sini
                     </span>
                     <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
@@ -1364,7 +1370,7 @@ export default function TransactionFormPage({
                 right={<span className={tagClass}>Live preview</span>}
               />
 
-              <div className="space-y-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-muted)] p-4">
+              <div className="space-y-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-muted)] p-3.5 sm:p-4">
                 <div className="border-b border-dashed border-[var(--border-strong)] pb-3 text-center">
                   <p className="text-xs font-semibold text-[var(--royal-700)]">
                     Fotocopy Esbe Lampu Merah
@@ -1379,7 +1385,7 @@ export default function TransactionFormPage({
                       {isExpense ? 'Pengeluaran kas' : 'Pemasukan kas'}
                     </span>
                   </div>
-                  <p className="mt-2 text-2xl font-semibold text-[var(--text-main)] tabular-nums">
+                  <p className="mt-2 text-xl sm:text-2xl font-semibold text-[var(--text-main)] tabular-nums">
                     {form.amount ? rp(form.amount) : 'Rp 0'}
                   </p>
                 </div>
@@ -1387,22 +1393,22 @@ export default function TransactionFormPage({
                 <div className="space-y-2.5 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[var(--text-muted)]">Keterangan</span>
-                    <span className="text-right font-medium text-[var(--text-main)]">
+                    <span className="min-w-0 break-words text-right font-medium text-[var(--text-main)]">
                       {form.title.trim() || '—'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="text-[var(--text-muted)]">Kategori</span>
                     <span className="font-medium text-[var(--text-main)]">{form.category}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="text-[var(--text-muted)]">Metode</span>
                     <span className="group flex items-center gap-1 font-medium text-[var(--text-main)]">
                       <ActiveMethodIcon className={`h-3.5 w-3.5 text-[var(--royal-600)] ${ICON_HOVER}`} aria-hidden="true" />
                       {activeMethod.label}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="text-[var(--text-muted)]">Shift</span>
                     <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
                       <span
@@ -1413,7 +1419,7 @@ export default function TransactionFormPage({
                       {shiftMeta.label}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="text-[var(--text-muted)]">Waktu</span>
                     <span className="font-medium text-[var(--text-main)] tabular-nums">
                       {form.date} · {form.time} WIB
@@ -1422,7 +1428,7 @@ export default function TransactionFormPage({
                   {form.notes && (
                     <div className="flex items-start justify-between gap-2 border-t border-[var(--border-default)] pt-2">
                       <span className="text-[var(--text-muted)]">Catatan</span>
-                      <span className="text-right font-medium text-[var(--text-main)] italic">
+                      <span className="min-w-0 break-words text-right font-medium text-[var(--text-main)] italic">
                         {form.notes}
                       </span>
                     </div>
