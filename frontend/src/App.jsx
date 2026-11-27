@@ -296,7 +296,7 @@ export default function App() {
       <TopLoadingBar trigger={currentPage} />
       {currentUser && (
         <div
-          className={`app-shell min-h-screen bg-[var(--surface-app)] text-[var(--text-main)] flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 lg:p-6 font-sans ${appRevealed ? 'is-revealed' : ''}`}
+          className={`app-shell min-h-screen bg-[var(--surface-app)] text-[var(--text-main)] flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 pb-24 lg:p-6 font-sans ${appRevealed ? 'is-revealed' : ''}`}
         >
           <a
             href="#main-content"

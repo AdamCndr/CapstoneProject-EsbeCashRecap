@@ -102,10 +102,10 @@ const DETAIL_COLUMNS = [
 //   judul 16px semibold · subjudul 13px muted · isi/baris data 14px · label & keterangan 12px
 function CardHeader({ title, hint, right }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 mb-5">
+    <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 mb-4 sm:mb-5">
       <div className="min-w-[11rem] flex-1">
-        <h2 className="text-lg font-semibold leading-snug text-[var(--text-main)]">{title}</h2>
-        {hint && <p className="text-sm leading-snug text-[var(--text-muted)] mt-1">{hint}</p>}
+        <h2 className="text-base sm:text-lg font-semibold leading-snug text-[var(--text-main)]">{title}</h2>
+        {hint && <p className="text-xs sm:text-sm leading-snug text-[var(--text-muted)] mt-1">{hint}</p>}
       </div>
       {right}
     </div>
@@ -313,11 +313,11 @@ function DateField({ value, onChange }) {
         aria-label={`Pilih tanggal, ${label}`}
         onClick={openPanel}
         style={{ background: PAGE_BG }}
-        className={`group relative flex min-h-14 items-center gap-3 rounded-2xl px-4 py-1.5 shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none ${open ? 'ring-2 ring-[color:var(--ring-on-dark)]' : ''}`}
+        className={`group relative flex min-h-12 sm:min-h-14 w-full items-center gap-3 sm:w-auto rounded-2xl px-3.5 sm:px-4 py-1.5 shadow-[var(--shadow-inset-hero)] outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-inset-hero-hover)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] motion-reduce:transition-none ${open ? 'ring-2 ring-[color:var(--ring-on-dark)]' : ''}`}
       >
-        <CalendarDays className="h-5 w-5 shrink-0 text-[var(--royal-600)] transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6" aria-hidden="true" />
-        <span className="text-base font-semibold tabular-nums text-[var(--text-main)]">{label}</span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+        <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-[var(--royal-600)] transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6" aria-hidden="true" />
+        <span className="text-sm sm:text-base font-semibold tabular-nums text-[var(--text-main)]">{label}</span>
+        <ChevronDown className={`ml-auto sm:ml-0 h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
 
       <FloatingPanel
@@ -371,8 +371,8 @@ function DateField({ value, onChange }) {
                       aria-label={`${c.day} ${MONTHS_ID[parseISO(c.iso).m]} ${parseISO(c.iso).y}`}
                       onClick={() => choose(c.iso)}
                       className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-90 motion-reduce:transition-none ${isSel
-                          ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)] shadow-md hover:scale-105'
-                          : `${c.out ? 'text-[var(--text-muted-alt)]' : 'text-[var(--text-main)]'} hover:scale-110 hover:bg-[var(--surface-muted)] ${isToday ? 'font-semibold ring-1 ring-inset ring-[color:var(--royal-400)]' : ''}`
+                        ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)] shadow-md hover:scale-105'
+                        : `${c.out ? 'text-[var(--text-muted-alt)]' : 'text-[var(--text-main)]'} hover:scale-110 hover:bg-[var(--surface-muted)] ${isToday ? 'font-semibold ring-1 ring-inset ring-[color:var(--royal-400)]' : ''}`
                         }`}
                     >
                       {c.day}
@@ -412,9 +412,9 @@ function DateField({ value, onChange }) {
 
 // ── Filter shift: indikator geser mulus antar pilihan ────────────────────────
 const SHIFT_OPTIONS = [
-  ['semua', 'Semua', '06:00–21:00'],
+  ['semua', 'Semua', '06:00–22:00'],
   ['pagi', 'Pagi', '06:00–14:00'],
-  ['siang', 'Siang', '14:00–21:00']
+  ['siang', 'Siang', '14:00–22:00']
 ];
 
 function ShiftSwitch({ value, onChange }) {
@@ -460,7 +460,7 @@ function ShiftSwitch({ value, onChange }) {
       role="group"
       aria-label="Filter shift"
       style={{ background: PAGE_BG }}
-      className="relative inline-flex min-h-14 items-stretch gap-1 rounded-2xl p-1.5 shadow-[var(--shadow-inset-hero)]"
+      className="relative flex w-full min-h-12 sm:min-h-14 items-stretch gap-1 rounded-2xl p-1.5 sm:inline-flex sm:w-auto shadow-[var(--shadow-inset-hero)]"
     >
       <span
         aria-hidden="true"
@@ -483,11 +483,11 @@ function ShiftSwitch({ value, onChange }) {
             type="button"
             aria-pressed={active}
             onClick={() => onChange(val)}
-            className={`relative z-10 flex flex-col items-center justify-center rounded-xl px-3 py-1.5 leading-tight outline-none transition-[color,background-color,transform] duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none sm:px-5 ${active ? 'text-[var(--text-inverse)]' : 'text-[var(--text-main)]'
+            className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl px-1.5 py-1.5 leading-tight outline-none transition-[color,background-color,transform] duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] motion-reduce:transition-none sm:flex-none sm:px-5 ${active ? 'text-[var(--text-inverse)]' : 'text-[var(--text-main)]'
               }`}
           >
-            <span className="text-sm font-semibold">{label}</span>
-            <span className={`whitespace-nowrap text-[11px] tabular-nums transition-colors duration-200 ${active ? 'text-[color:var(--glass-text-soft)]' : 'text-[var(--text-muted-alt)]'}`}>{hint}</span>
+            <span className="text-xs sm:text-sm font-semibold">{label}</span>
+            <span className={`whitespace-nowrap text-[10px] sm:text-[11px] tabular-nums transition-colors duration-200 ${active ? 'text-[color:var(--glass-text-soft)]' : 'text-[var(--text-muted-alt)]'}`}>{hint}</span>
           </button>
         );
       })}
@@ -516,7 +516,7 @@ function TxSearch({ value, onChange, label, placeholder }) {
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape' && value) { e.preventDefault(); onChange(''); } }}
-        className="h-10 w-full rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] pl-10 pr-10 text-sm text-[var(--text-main)] outline-none transition-all duration-200 placeholder:text-[var(--text-muted)] hover:-translate-y-px hover:border-[color:var(--royal-400)] hover:shadow-[var(--shadow-search-hover)] focus:border-[color:var(--royal-400)] focus:shadow-[var(--shadow-search-focus)] focus:ring-2 focus:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none"
+        className="h-10 w-full rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] pl-10 pr-10 text-base sm:text-sm text-[var(--text-main)] outline-none transition-all duration-200 placeholder:text-[var(--text-muted)] hover:-translate-y-px hover:border-[color:var(--royal-400)] hover:shadow-[var(--shadow-search-hover)] focus:border-[color:var(--royal-400)] focus:shadow-[var(--shadow-search-focus)] focus:ring-2 focus:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none"
       />
       <button
         type="button"
@@ -533,12 +533,14 @@ function TxSearch({ value, onChange, label, placeholder }) {
 }
 
 /** Dropdown filter untuk satu kolom tabel rincian transaksi (listbox kustom). */
-function ColumnFilterSelect({ label, value, options, onChange }) {
+function ColumnFilterSelect({ label, value, options, onChange, allLabel, ariaLabel }) {
+  const all = allLabel ?? `Semua ${label}`;
+  const aria = ariaLabel ?? `Filter ${label}`;
   const id = useId();
   const btnRef = useRef(null);
   const listRef = useRef(null);
   const [open, setOpen] = useState(false);
-  const items = useMemo(() => [{ v: '', t: `Semua ${label}` }, ...options.map((o) => ({ v: o, t: o }))], [label, options]);
+  const items = useMemo(() => [{ v: '', t: all }, ...options.map((o) => ({ v: o, t: o }))], [all, options]);
   const selIdx = Math.max(0, items.findIndex((i) => i.v === (value || '')));
   const [active, setActive] = useState(selIdx);
 
@@ -585,13 +587,13 @@ function ColumnFilterSelect({ label, value, options, onChange }) {
         aria-expanded={open}
         aria-controls={`${id}-list`}
         aria-activedescendant={open ? `${id}-${active}` : undefined}
-        aria-label={`Filter ${label}`}
+        aria-label={aria}
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onKeyDown}
-        className={`flex h-8 w-full items-center justify-between gap-1 rounded-lg border bg-[var(--surface-card)] pl-2.5 pr-2 text-left text-xs outline-none transition-all duration-150 hover:border-[color:var(--royal-400)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.97] motion-reduce:transition-none ${open ? 'border-[color:var(--royal-400)] ring-2 ring-[color:var(--royal-300)]' : 'border-[var(--border-default)]'
+        className={`flex h-9 lg:h-8 w-full items-center justify-between gap-1 rounded-lg border bg-[var(--surface-card)] pl-2.5 pr-2 text-left text-[13px] lg:text-xs outline-none transition-all duration-150 hover:border-[color:var(--royal-400)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.97] motion-reduce:transition-none ${open ? 'border-[color:var(--royal-400)] ring-2 ring-[color:var(--royal-300)]' : 'border-[var(--border-default)]'
           } ${value ? 'font-medium text-[var(--royal-600)]' : 'text-[var(--text-main)]'}`}
       >
-        <span className="truncate">{value || `Semua ${label}`}</span>
+        <span className="truncate">{value || all}</span>
         <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 text-[var(--text-muted)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -602,7 +604,7 @@ function ColumnFilterSelect({ label, value, options, onChange }) {
         matchWidth
         className="max-w-[18rem] rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-1 shadow-[var(--shadow-popover-md)]"
       >
-        <ul ref={listRef} id={`${id}-list`} role="listbox" aria-label={`Filter ${label}`} className="relative max-h-60 overflow-y-auto">
+        <ul ref={listRef} id={`${id}-list`} role="listbox" aria-label={aria} className="relative max-h-60 overflow-y-auto">
           {items.map((it, i) => {
             const isSel = it.v === (value || '');
             return (
@@ -615,7 +617,7 @@ function ColumnFilterSelect({ label, value, options, onChange }) {
                 onMouseEnter={() => setActive(i)}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(it.v)}
-                className={`flex cursor-pointer select-none items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs transition-colors duration-100 active:scale-[0.98] ${i === active ? 'bg-[var(--surface-muted)]' : ''
+                className={`flex cursor-pointer select-none items-center justify-between gap-3 rounded-lg px-2.5 py-2 lg:py-1.5 text-[13px] lg:text-xs transition-colors duration-100 active:scale-[0.98] ${i === active ? 'bg-[var(--surface-muted)]' : ''
                   } ${isSel ? 'font-semibold text-[var(--royal-600)]' : 'text-[var(--text-main)]'}`}
               >
                 <span className="truncate">{it.t}</span>
@@ -673,8 +675,8 @@ function LiveClock({ icon: Icon }) {
   const tz =
     new Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' }).formatToParts(now).find((x) => x.type === 'timeZoneName')?.value || '';
   return (
-    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-[color:var(--glass-text-soft)] tabular-nums">
-      <Icon className="w-5 h-5 text-[var(--text-inverse)]" aria-hidden="true" />
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-base text-[color:var(--glass-text-soft)] tabular-nums">
+      <Icon className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-[var(--text-inverse)]" aria-hidden="true" />
       <span>{date}</span>
       <span aria-hidden="true" className="hidden sm:inline text-[color:var(--glass-text-dim)]">·</span>
       <time dateTime={now.toISOString()} className="whitespace-nowrap">
@@ -711,7 +713,7 @@ function BarRow({ icon: Icon, label, value, pct, color, barStyle, rank, opacity 
       {...ip}
       className={`${interactive ? '-mx-2 cursor-pointer rounded-lg px-2 py-1.5 outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none' : ''} ${active || selected ? 'bg-[var(--surface-muted)]' : ''} ${selected ? 'ring-1 ring-[color:var(--royal-300)]' : ''} ${dim ? 'opacity-50' : ''}`}
     >
-      <div className="flex items-center justify-between gap-3 text-sm">
+      <div className="flex items-center justify-between gap-3 text-[13px] sm:text-sm">
         <span className="flex items-center gap-2 min-w-0 text-[var(--text-main)]">
           {rank != null && (
             <span className="grid place-items-center w-5 h-5 shrink-0 rounded-md bg-[var(--surface-muted)] text-[11px] font-semibold text-[var(--text-muted)] tabular-nums">
@@ -752,7 +754,7 @@ function DonutChart({ rows, total, ready, delay = 0, label = 'Total', size = 144
   const activeRow = activeKey ? visible.find((x) => x.key === activeKey) : null;
   let acc = 0;
   return (
-    <div className="relative mx-auto" style={{ width: size, height: size }}>
+    <div className="relative mx-auto aspect-square w-[8.5rem] sm:w-36">
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90 overflow-visible" role="img" aria-label={`${label}: ${rp(total)}`}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-muted)" strokeWidth={stroke} />
         {visible.map((x, i) => {
@@ -786,7 +788,7 @@ function DonutChart({ rows, total, ready, delay = 0, label = 'Total', size = 144
       </svg>
       <div className="absolute inset-0 grid place-content-center text-center pointer-events-none">
         <span className="text-xs text-[var(--text-muted)]">{activeRow ? activeRow.label : label}</span>
-        <span className="text-xl font-semibold tabular-nums text-[var(--text-main)] leading-tight">{rpShort(activeRow ? activeRow.val : total)}</span>
+        <span className="text-lg sm:text-xl font-semibold tabular-nums text-[var(--text-main)] leading-tight">{rpShort(activeRow ? activeRow.val : total)}</span>
       </div>
     </div>
   );
@@ -813,6 +815,100 @@ const METHOD_ICONS = {
   qris: QrCode,
   transfer: Landmark
 };
+
+// ── Daftar transaksi versi mobile/tablet (<lg): kartu + filter/urut dalam panel lipat ──
+function MobileTxList({ rows, sort, setSort, columnFilters, setColumnFilters, columnOptions, flashId }) {
+  const sortable = DETAIL_COLUMNS.filter((c) => !c.noSort);
+  const filterable = DETAIL_COLUMNS.filter((c) => !c.noFilter);
+  const nFilter = Object.values(columnFilters).filter(Boolean).length;
+  return (
+    <div className="lg:hidden">
+      <details className="group mb-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-muted)]">
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-[13px] font-medium text-[var(--text-main)] [&::-webkit-details-marker]:hidden">
+          <span>Filter &amp; urutkan{nFilter ? ` (${nFilter})` : ''}</span>
+          <ChevronDown className="h-4 w-4 text-[var(--text-muted)] transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="grid grid-cols-2 gap-3 border-t border-[var(--border-default)] p-3">
+          {filterable.map((col) => (
+            <div key={col.key} className="min-w-0">
+              <span className="mb-1 block text-xs text-[var(--text-muted)]">{col.label}</span>
+              <ColumnFilterSelect
+                label={col.label}
+                value={columnFilters[col.key] || ''}
+                options={columnOptions[col.key] || []}
+                onChange={(value) => setColumnFilters((prev) => ({ ...prev, [col.key]: value }))}
+              />
+            </div>
+          ))}
+          <div className="col-span-2">
+            <span className="mb-1 block text-xs text-[var(--text-muted)]">Urutkan</span>
+            <div className="flex gap-2">
+              <div className="min-w-0 flex-1">
+                <ColumnFilterSelect
+                  label="Urutkan"
+                  allLabel="Default"
+                  ariaLabel="Urutkan berdasarkan"
+                  value={sortable.find((c) => c.key === sort.key)?.label || ''}
+                  options={sortable.map((c) => c.label)}
+                  onChange={(v) => setSort({ key: sortable.find((c) => c.label === v)?.key || null, dir: sort.dir })}
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!sort.key}
+                aria-label={sort.dir === 'asc' ? 'Urutan naik, ketuk untuk turun' : 'Urutan turun, ketuk untuk naik'}
+                onClick={() => setSort((p) => ({ ...p, dir: p.dir === 'asc' ? 'desc' : 'asc' }))}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-main)] disabled:opacity-40 active:scale-95"
+              >
+                {sort.dir === 'asc' ? <ArrowUp className="h-4 w-4" aria-hidden="true" /> : <ArrowDown className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <ul className="space-y-2.5">
+        {rows.map((x) => {
+          const isExp = x.type === 'pengeluaran';
+          const MethodIcon = METHOD_ICONS[x.paymentMethod?.toLowerCase()] || Banknote;
+          const shiftColor = SHIFT_COLORS[x.shift?.toLowerCase()] || 'var(--royal-600)';
+          return (
+            <li
+              key={x.id}
+              className="rounded-xl border border-[var(--border-default)] p-2.5 sm:p-3 transition-colors duration-700"
+              style={flashId === x.id ? { background: 'color-mix(in srgb, var(--amber-500) 20%, transparent)' } : undefined}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-[13px] sm:text-sm font-medium text-[var(--text-main)]">{x.title}</p>
+                  <p className={`break-words text-xs ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-muted)]'}`}>{x.notes || x.referenceId || '-'}</p>
+                </div>
+                <p className={`shrink-0 whitespace-nowrap text-[13px] font-semibold tabular-nums ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'}`}>
+                  {isExp ? '−' : '+'} {rp(x.amount)}
+                </p>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-[var(--text-muted)]">
+                <span className="tabular-nums">{x.time || '-'} WIB · {x.id}</span>
+                <span className={`rounded-lg px-2 py-0.5 ${isExp ? 'bg-[var(--cash-out-light)] text-[var(--amber-700)]' : 'bg-[var(--surface-muted)]'}`}>
+                  {x.category || (isExp ? 'Pengeluaran' : 'Umum')}
+                </span>
+                <span className="capitalize text-[var(--text-main)]">
+                  <i className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: shiftColor }} />
+                  {x.shift}
+                </span>
+                <span className="capitalize text-[var(--text-main)]">
+                  <MethodIcon className="-mt-0.5 mr-1 inline h-3.5 w-3.5 text-[var(--royal-600)]" aria-hidden="true" />
+                  {x.paymentMethod}
+                </span>
+                <span className={x.proofUrl ? 'text-[var(--cash-in)]' : ''}>{x.proofUrl ? 'Terlampir' : 'Tanpa nota'}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export default function DashboardPage({
   transactions = [],
@@ -1100,7 +1196,7 @@ export default function DashboardPage({
   // Perbandingan shift
   const shiftRows = [
     { key: 'pagi', label: 'Pagi', range: '06:00–14:00', masuk: shiftPagiMasuk, keluar: shiftPagiKeluar, color: SHIFT_COLORS.pagi },
-    { key: 'siang', label: 'Siang', range: '14:00–21:00', masuk: shiftSiangMasuk, keluar: shiftSiangKeluar, color: SHIFT_COLORS.siang }
+    { key: 'siang', label: 'Siang', range: '14:00–22:00', masuk: shiftSiangMasuk, keluar: shiftSiangKeluar, color: SHIFT_COLORS.siang }
   ];
   const maxShiftVal = Math.max(shiftPagiMasuk, shiftPagiKeluar, shiftSiangMasuk, shiftSiangKeluar, 1);
 
@@ -1122,8 +1218,8 @@ export default function DashboardPage({
 
     // Dimensi piksel asli (bukan viewBox yang diskalakan) → ukuran teks selalu 12px
     const W = chartW || 640;
-    const H = W < 480 ? 220 : 252;
-    const x0 = 52;
+    const H = W < 480 ? 200 : 252;
+    const x0 = W < 480 ? 44 : 52;
     const x1 = W - 14;
     const y0 = 14;
     const y1 = H - 30;
@@ -1204,13 +1300,13 @@ export default function DashboardPage({
   }, [filtered, chartW]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       {/* HERO SECTION */}
       <section
         ref={heroGlow.ref}
         onMouseMove={heroGlow.onMouseMove}
         onMouseLeave={heroGlow.onMouseLeave}
-        className="relative overflow-hidden rounded-[22px] p-5 lg:p-6 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)]"
+        className="relative overflow-hidden rounded-[22px] p-4 sm:p-5 lg:p-6 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)]"
         style={{ background: 'var(--grad-hero)', ...reveal(0) }}
         aria-label="Sapaan dan ringkasan hari ini"
       >
@@ -1218,40 +1314,40 @@ export default function DashboardPage({
         {/* Glow latar mengikuti mouse; CSS variable diwariskan dari <section>. */}
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 rounded-[22px]" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_28rem] xl:grid-cols-[1fr_32rem] lg:items-stretch">
+        <div className="relative grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_28rem] xl:grid-cols-[minmax(0,1fr)_32rem] lg:items-stretch">
           {/* Kiri: sapaan + kontrol filter */}
-          <div className="relative z-10 flex flex-col gap-6">
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-6">
             <div style={reveal(1, 10)}>
               <LiveClock icon={GreetIcon} />
             </div>
 
             <div className="flex flex-1 flex-col justify-center" style={reveal(1, 10)}>
-              <h1 className="space-y-2.5 font-semibold tracking-tight leading-[1.15] break-words">
-                <span className="block text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-medium text-[color:var(--glass-text-soft)]">{greeting}</span>
-                <span className="block text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">{fullName}</span>
+              <h1 className="space-y-0.5 sm:space-y-2.5 font-semibold tracking-tight leading-[1.15] break-words">
+                <span className="block text-base sm:text-3xl lg:text-4xl xl:text-5xl font-medium text-[color:var(--glass-text-soft)]">{greeting}</span>
+                <span className="block text-2xl sm:text-4xl lg:text-5xl xl:text-6xl">{fullName}</span>
               </h1>
             </div>
 
-            <div className="mt-auto flex flex-wrap items-end gap-3" style={reveal(1, 10)}>
+            <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end" style={reveal(1, 10)}>
               <DateField value={selectedDate} onChange={setSelectedDate} />
               <ShiftSwitch value={selectedShift} onChange={setSelectedShift} />
             </div>
           </div>
 
           {/* Kanan: ringkasan (kartu kaca) */}
-          <div className="relative">
+          <div className="relative min-w-0">
             {/* Aksen bulat di belakang kartu (putih transparan, selaras dengan aksen lama) */}
             <div aria-hidden="true" className="pointer-events-none absolute inset-0">
               <div className="absolute -top-16 -right-14 h-56 w-56 rounded-full bg-[var(--glass-line)]" />
               <div className="absolute -bottom-20 left-6 h-52 w-52 rounded-full bg-[var(--glass-soft)]" />
             </div>
             {/* Metrik: kas bersih dominan, sisanya pendukung */}
-            <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="relative grid grid-cols-2 gap-3">
               <div
                 ref={tiltNet.ref}
                 onMouseMove={tiltNet.onMouseMove}
                 onMouseLeave={tiltNet.onMouseLeave}
-                className="sm:col-span-2 rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-4"
+                className="col-span-2 rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-3.5 sm:p-4"
                 style={reveal(2, 12)}
               >
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -1269,7 +1365,7 @@ export default function DashboardPage({
                     </span>
                   )}
                 </div>
-                <p className="text-2xl lg:text-3xl font-semibold tracking-tight tabular-nums mt-2 break-words">
+                <p className="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight tabular-nums mt-2 break-words">
                   {totalBersih < 0 ? '−' : ''}
                   {rp(totalBersih)}
                 </p>
@@ -1287,7 +1383,7 @@ export default function DashboardPage({
                 >
                   <div className="h-full rounded-full bg-[var(--text-inverse)]" style={grow(pctKeluar, 2)} />
                 </div>
-                <div className="flex justify-between gap-3 mt-2.5 text-xs text-[color:var(--glass-text-soft)] tabular-nums">
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 mt-2.5 text-xs text-[color:var(--glass-text-soft)] tabular-nums">
                   <span className="flex items-center gap-1">
                     <ArrowDownLeft className="w-3.5 h-3.5" aria-hidden="true" />
                     Masuk {rp(totalMasuk)}
@@ -1303,14 +1399,14 @@ export default function DashboardPage({
                 ref={tiltTrx.ref}
                 onMouseMove={tiltTrx.onMouseMove}
                 onMouseLeave={tiltTrx.onMouseLeave}
-                className="rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-4 flex flex-col"
+                className="rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-3 sm:p-4 flex flex-col"
                 style={reveal(3, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <ArrowLeftRight className="w-4 h-4 text-[var(--text-inverse)]" aria-hidden="true" />
                   Transaksi
                 </p>
-                <p className="text-2xl font-semibold tracking-tight tabular-nums mt-2">{filtered.length}</p>
+                <p className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums mt-2">{filtered.length}</p>
                 <div className="mt-auto pt-3">
                   <div
                     className="h-1.5 rounded-full bg-[var(--glass-line)] overflow-hidden"
@@ -1332,16 +1428,16 @@ export default function DashboardPage({
                 ref={tiltNota.ref}
                 onMouseMove={tiltNota.onMouseMove}
                 onMouseLeave={tiltNota.onMouseLeave}
-                className="rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-4 flex flex-col"
+                className="rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-3 sm:p-4 flex flex-col"
                 style={reveal(4, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <Paperclip className="w-4 h-4 text-[var(--text-inverse)]" aria-hidden="true" />
                   Bukti nota
                 </p>
-                <p className="text-2xl font-semibold tracking-tight tabular-nums mt-2">
+                <p className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums mt-2">
                   {bkCount}
-                  <span className="text-base text-[color:var(--glass-text-soft)]">/{filtered.length}</span>
+                  <span className="text-sm sm:text-base text-[color:var(--glass-text-soft)]">/{filtered.length}</span>
                 </p>
                 <div className="mt-auto pt-3">
                   <div
@@ -1366,13 +1462,13 @@ export default function DashboardPage({
       </section>
 
       {/* ROW A: ARUS KAS + PERLU DICEK */}
-      <section className="grid gap-5 lg:grid-cols-[2fr_1fr]">
-        <div className="card" style={reveal(5)}>
+      <section className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="card min-w-0" style={reveal(5)}>
           <CardHeader
             title="Arus kas"
             hint="Akumulasi pemasukan dan pengeluaran sepanjang hari"
             right={
-              <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 text-[13px] text-[var(--text-muted)] tabular-nums">
+              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-x-4 sm:gap-x-5 gap-y-1 text-xs sm:text-[13px] text-[var(--text-muted)] tabular-nums">
                 <span className="flex items-center gap-2 whitespace-nowrap">
                   <i className="inline-block w-2.5 h-2.5 rounded-full bg-[var(--royal-600)]" />
                   Masuk <b className="font-semibold text-[var(--text-main)]">{rp(totalMasuk)}</b>
@@ -1385,7 +1481,7 @@ export default function DashboardPage({
             }
           />
           {/* SVG Line Chart: digambar dalam piksel asli sesuai lebar card */}
-          <figure ref={chartRef} className="w-full">
+          <figure ref={chartRef} className="w-full min-w-0 overflow-hidden">
             <figcaption className="sr-only">
               Grafik akumulasi pemasukan ({rp(totalMasuk)}) dan pengeluaran ({rp(totalKeluar)}) sepanjang hari.
             </figcaption>
@@ -1410,6 +1506,7 @@ export default function DashboardPage({
                     height={H}
                     viewBox={`0 0 ${W} ${H}`}
                     className="block max-w-full"
+                    style={{ touchAction: 'pan-y' }}
                     role="img"
                     aria-label="Pemasukan dan pengeluaran kumulatif per transaksi"
                     onPointerLeave={() => setHoverIdx(null)}
@@ -1439,7 +1536,7 @@ export default function DashboardPage({
                             stroke="var(--border-subtle)"
                             strokeDasharray={f === 0 ? undefined : '3 5'}
                           />
-                          <text x={x0 - 12} y={yPos + 4} fontSize="12" fill="var(--text-muted)" textAnchor="end">
+                          <text x={x0 - 12} y={yPos + 4} fontSize={W < 480 ? 11 : 12} fill="var(--text-muted)" textAnchor="end">
                             {v === 0 ? '0' : rpShort(v)}
                           </text>
                         </g>
@@ -1448,7 +1545,7 @@ export default function DashboardPage({
 
                     {/* Label waktu sumbu X */}
                     {xLabels.map((lbl, i) => (
-                      <text key={i} x={lbl.x} y={y1 + 22} fontSize="12" fill="var(--text-muted)" textAnchor="middle">
+                      <text key={i} x={lbl.x} y={y1 + 22} fontSize={W < 480 ? 11 : 12} fill="var(--text-muted)" textAnchor="middle">
                         {lbl.time}
                       </text>
                     ))}
@@ -1625,7 +1722,7 @@ export default function DashboardPage({
           </figure>
         </div>
 
-        <div className="card flex flex-col" style={reveal(6)}>
+        <div className="card flex min-w-0 flex-col" style={reveal(6)}>
           <CardHeader
             title="Perlu dicek"
             hint="Transaksi tanpa bukti nota"
@@ -1653,14 +1750,14 @@ export default function DashboardPage({
                     className="-mx-2 flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 outline-none transition-all duration-200 hover:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--text-main)] truncate">{t.title}</p>
+                      <p className="text-[13px] sm:text-sm font-medium text-[var(--text-main)] truncate">{t.title}</p>
                       <p className="text-xs text-[var(--text-muted)]">
                         {t.time || '-'} WIB · {t.id}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <span
-                        className={`text-sm font-semibold tabular-nums whitespace-nowrap ${t.type === 'pengeluaran' ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
+                        className={`text-[13px] sm:text-sm font-semibold tabular-nums whitespace-nowrap ${t.type === 'pengeluaran' ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
                           }`}
                       >
                         {t.type === 'pengeluaran' ? '−' : '+'} {rp(t.amount)}
@@ -1672,7 +1769,7 @@ export default function DashboardPage({
                           title="Unggah bukti"
                           onClick={(e) => { e.stopPropagation(); onNavigate('upload', { transactionId: t.id }); }}
                           onKeyDown={(e) => e.stopPropagation()}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-muted)] transition-all duration-150 hover:bg-[var(--surface-card)] hover:text-[var(--royal-600)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)]"
+                          className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-[var(--text-muted)] transition-all duration-150 hover:bg-[var(--surface-card)] hover:text-[var(--royal-600)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)]"
                         >
                           <Paperclip className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -1702,7 +1799,7 @@ export default function DashboardPage({
       </section>
 
       {/* ROW B: PEMASUKAN PER METODE, PENGELUARAN PER KATEGORI, PERBANDINGAN SHIFT */}
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid grid-cols-1 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
         <div className="card flex flex-col" style={reveal(7)}>
           <CardHeader
             title="Pemasukan per metode"
@@ -1734,7 +1831,7 @@ export default function DashboardPage({
                       onMouseLeave={() => setHoverMethod(null)}
                       onFocus={() => setHoverMethod(m.key)}
                       onBlur={() => setHoverMethod(null)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.98] motion-reduce:transition-none ${hoverMethod === m.key || (columnFilters.metode || '').toLowerCase() === m.key ? 'bg-[var(--surface-muted)]' : ''
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-[13px] sm:text-sm outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.98] motion-reduce:transition-none ${hoverMethod === m.key || (columnFilters.metode || '').toLowerCase() === m.key ? 'bg-[var(--surface-muted)]' : ''
                         } ${(columnFilters.metode || '').toLowerCase() === m.key ? 'ring-1 ring-[color:var(--royal-300)]' : ''}`}
                     >
                       <span className="flex items-center gap-2 min-w-0 text-[var(--text-main)]">
@@ -1801,18 +1898,18 @@ export default function DashboardPage({
                     aria-label={`Filter dashboard ke shift ${s.label}`}
                     onClick={() => setSelectedShift(selectedShift === s.key ? 'semua' : s.key)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedShift(selectedShift === s.key ? 'semua' : s.key); } }}
-                    className={`-mx-3 cursor-pointer rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${selectedShift === s.key ? 'bg-[var(--surface-muted)] ring-1 ring-[color:var(--royal-300)]' : ''
+                    className={`-mx-2 sm:-mx-3 cursor-pointer rounded-xl px-2 sm:px-3 py-2.5 outline-none transition-all duration-200 hover:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-[0.99] motion-reduce:transition-none ${selectedShift === s.key ? 'bg-[var(--surface-muted)] ring-1 ring-[color:var(--royal-300)]' : ''
                       } ${selectedShift !== 'semua' && selectedShift !== s.key ? 'opacity-60' : ''}`}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="flex items-center gap-2 text-sm text-[var(--text-main)]">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <span className="flex items-center gap-2 text-[13px] sm:text-sm text-[var(--text-main)]">
                         <i className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
                         <b className="font-semibold">{s.label}</b>
                         <span className="text-xs text-[var(--text-muted)]">{s.range}</span>
                       </span>
                       <span className="text-right">
                         <span className="block text-xs text-[var(--text-muted)] leading-none mb-1">Kas bersih</span>
-                        <span className={`text-sm font-semibold tabular-nums ${bersih < 0 ? 'text-[var(--cash-out)]' : 'text-[var(--cash-in)]'}`}>
+                        <span className={`text-[13px] sm:text-sm font-semibold tabular-nums ${bersih < 0 ? 'text-[var(--cash-out)]' : 'text-[var(--cash-in)]'}`}>
                           {bersih < 0 ? '−' : ''}
                           {rp(bersih)}
                         </span>
@@ -1831,7 +1928,7 @@ export default function DashboardPage({
                             onMouseLeave={() => setHoverBar(null)}
                             className="flex items-center gap-3 text-xs text-[var(--text-muted)]"
                           >
-                            <span className="w-12 shrink-0">{b.k}</span>
+                            <span className="w-10 sm:w-12 shrink-0">{b.k}</span>
                             <div
                               className={`flex-1 h-2 rounded-full bg-[var(--surface-muted)] overflow-hidden transition-transform duration-200 ${hoverBar === `${s.key}-${b.k}` ? 'scale-y-150' : ''}`}
                               role="progressbar"
@@ -1903,122 +2000,133 @@ export default function DashboardPage({
             Belum ada transaksi pada tanggal dan filter yang dipilih.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left min-w-[900px]">
-              <caption className="sr-only">Rincian transaksi pada tanggal dan filter terpilih</caption>
-              <thead>
-                <tr className="text-xs text-[var(--text-muted)]">
-                  {DETAIL_COLUMNS.map((col) => {
-                    if (col.noSort) {
+          <>
+            <MobileTxList
+              rows={detailData}
+              sort={sort}
+              setSort={setSort}
+              columnFilters={columnFilters}
+              setColumnFilters={setColumnFilters}
+              columnOptions={columnOptions}
+              flashId={flashId}
+            />
+            <div className="hidden overflow-x-auto lg:block">
+              <table className="w-full text-sm text-left min-w-[900px]">
+                <caption className="sr-only">Rincian transaksi pada tanggal dan filter terpilih</caption>
+                <thead>
+                  <tr className="text-xs text-[var(--text-muted)]">
+                    {DETAIL_COLUMNS.map((col) => {
+                      if (col.noSort) {
+                        return (
+                          <th key={col.key} scope="col" className="py-2.5 font-normal">
+                            {col.label}
+                          </th>
+                        );
+                      }
+                      const active = sort.key === col.key;
+                      const SortIcon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
                       return (
-                        <th key={col.key} scope="col" className="py-2.5 font-normal">
-                          {col.label}
+                        <th
+                          key={col.key}
+                          scope="col"
+                          aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                          className={`py-2.5 font-normal ${col.key === 'nominal' ? 'text-right' : ''}`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleSort(col.key)}
+                            aria-label={`Urutkan berdasarkan ${col.label}`}
+                            className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] ${col.key === 'nominal' ? 'flex-row-reverse' : ''
+                              }`}
+                          >
+                            {col.label}
+                            <SortIcon
+                              aria-hidden="true"
+                              className={`h-3 w-3 ${active ? 'text-[var(--royal-600)]' : 'opacity-50'}`}
+                            />
+                          </button>
                         </th>
                       );
-                    }
-                    const active = sort.key === col.key;
-                    const SortIcon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+                    })}
+                  </tr>
+                  <tr className="text-xs">
+                    {DETAIL_COLUMNS.map((col) => (
+                      <th key={col.key} scope="col" className="pb-2 pr-3 font-normal">
+                        {col.noFilter ? null : (
+                          <ColumnFilterSelect
+                            label={col.label}
+                            value={columnFilters[col.key] || ''}
+                            options={columnOptions[col.key] || []}
+                            onChange={(value) =>
+                              setColumnFilters((prev) => ({ ...prev, [col.key]: value }))
+                            }
+                          />
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody id="rows">
+                  {detailData.map((x) => {
+                    const isExp = x.type === 'pengeluaran';
+                    const MethodIcon = METHOD_ICONS[x.paymentMethod?.toLowerCase()] || Banknote;
+                    const shiftColor = SHIFT_COLORS[x.shift?.toLowerCase()] || 'var(--royal-600)';
+
                     return (
-                      <th
-                        key={col.key}
-                        scope="col"
-                        aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        className={`py-2.5 font-normal ${col.key === 'nominal' ? 'text-right' : ''}`}
+                      <tr
+                        key={x.id}
+                        className="grid-l hover:bg-[var(--royal-50)] transition-colors duration-700"
+                        style={flashId === x.id ? { background: 'color-mix(in srgb, var(--amber-500) 20%, transparent)' } : undefined}
                       >
-                        <button
-                          type="button"
-                          onClick={() => toggleSort(col.key)}
-                          aria-label={`Urutkan berdasarkan ${col.label}`}
-                          className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] ${col.key === 'nominal' ? 'flex-row-reverse' : ''
+                        <td className="py-3 whitespace-nowrap">
+                          <div className={`font-medium ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'}`}>
+                            {x.time || '-'} WIB
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)]">{x.id}</div>
+                        </td>
+                        <td className="pr-3">
+                          <div className="font-medium text-[var(--text-main)]">{x.title}</div>
+                          <div className={`text-xs ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-muted)]'}`}>
+                            {x.notes || x.referenceId || '-'}
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <span
+                            className={`rounded-lg px-2.5 py-1 text-xs ${isExp
+                              ? 'bg-[var(--cash-out-light)] text-[var(--amber-700)]'
+                              : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'
+                              }`}
+                          >
+                            {x.category || (isExp ? 'Pengeluaran' : 'Umum')}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap text-xs text-[var(--text-main)] capitalize">
+                          <i
+                            className="inline-block w-2 h-2 rounded-full mr-1.5"
+                            style={{ background: shiftColor }}
+                          />
+                          {x.shift}
+                        </td>
+                        <td className="whitespace-nowrap text-xs text-[var(--text-main)] capitalize">
+                          <MethodIcon className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-[var(--royal-600)]" />
+                          {x.paymentMethod}
+                        </td>
+                        <td className={`whitespace-nowrap text-xs ${x.proofUrl ? 'text-[var(--cash-in)]' : 'text-[var(--text-muted)]'}`}>
+                          {x.proofUrl ? 'Terlampir' : 'Tanpa nota'}
+                        </td>
+                        <td
+                          className={`text-right font-semibold whitespace-nowrap tabular-nums ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
                             }`}
                         >
-                          {col.label}
-                          <SortIcon
-                            aria-hidden="true"
-                            className={`h-3 w-3 ${active ? 'text-[var(--royal-600)]' : 'opacity-50'}`}
-                          />
-                        </button>
-                      </th>
+                          {isExp ? '−' : '+'} {rp(x.amount)}
+                        </td>
+                      </tr>
                     );
                   })}
-                </tr>
-                <tr className="text-xs">
-                  {DETAIL_COLUMNS.map((col) => (
-                    <th key={col.key} scope="col" className="pb-2 pr-3 font-normal">
-                      {col.noFilter ? null : (
-                        <ColumnFilterSelect
-                          label={col.label}
-                          value={columnFilters[col.key] || ''}
-                          options={columnOptions[col.key] || []}
-                          onChange={(value) =>
-                            setColumnFilters((prev) => ({ ...prev, [col.key]: value }))
-                          }
-                        />
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody id="rows">
-                {detailData.map((x) => {
-                  const isExp = x.type === 'pengeluaran';
-                  const MethodIcon = METHOD_ICONS[x.paymentMethod?.toLowerCase()] || Banknote;
-                  const shiftColor = SHIFT_COLORS[x.shift?.toLowerCase()] || 'var(--royal-600)';
-
-                  return (
-                    <tr
-                      key={x.id}
-                      className="grid-l hover:bg-[var(--royal-50)] transition-colors duration-700"
-                      style={flashId === x.id ? { background: 'color-mix(in srgb, var(--amber-500) 20%, transparent)' } : undefined}
-                    >
-                      <td className="py-3 whitespace-nowrap">
-                        <div className={`font-medium ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'}`}>
-                          {x.time || '-'} WIB
-                        </div>
-                        <div className="text-xs text-[var(--text-muted)]">{x.id}</div>
-                      </td>
-                      <td className="pr-3">
-                        <div className="font-medium text-[var(--text-main)]">{x.title}</div>
-                        <div className={`text-xs ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-muted)]'}`}>
-                          {x.notes || x.referenceId || '-'}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap">
-                        <span
-                          className={`rounded-lg px-2.5 py-1 text-xs ${isExp
-                            ? 'bg-[var(--cash-out-light)] text-[var(--amber-700)]'
-                            : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'
-                            }`}
-                        >
-                          {x.category || (isExp ? 'Pengeluaran' : 'Umum')}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-[var(--text-main)] capitalize">
-                        <i
-                          className="inline-block w-2 h-2 rounded-full mr-1.5"
-                          style={{ background: shiftColor }}
-                        />
-                        {x.shift}
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-[var(--text-main)] capitalize">
-                        <MethodIcon className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-[var(--royal-600)]" />
-                        {x.paymentMethod}
-                      </td>
-                      <td className={`whitespace-nowrap text-xs ${x.proofUrl ? 'text-[var(--cash-in)]' : 'text-[var(--text-muted)]'}`}>
-                        {x.proofUrl ? 'Terlampir' : 'Tanpa nota'}
-                      </td>
-                      <td
-                        className={`text-right font-semibold whitespace-nowrap tabular-nums ${isExp ? 'text-[var(--cash-out)]' : 'text-[var(--text-main)]'
-                          }`}
-                      >
-                        {isExp ? '−' : '+'} {rp(x.amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>

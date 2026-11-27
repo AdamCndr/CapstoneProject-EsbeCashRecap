@@ -141,17 +141,17 @@ const SHIFT_OPTIONS = [
 
 const METHOD_OPTIONS = [
   { value: 'qris', label: 'QRIS', icon: QrCode },
-  { value: 'transfer', label: 'Transfer bank', icon: Landmark },
+  { value: 'transfer', label: 'Transfer bank', shortLabel: 'Transfer', icon: Landmark },
   { value: 'tunai', label: 'Tunai', icon: Banknote }
 ];
 
 // Skala tipografi kartu sama dengan Dashboard
 function CardHeader({ title, hint: sub, right }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2 sm:mb-5">
       <div className="min-w-[11rem] flex-1">
-        <h2 className="text-lg font-semibold leading-snug text-[var(--text-main)]">{title}</h2>
-        {sub && <p className="mt-1 text-sm leading-snug text-[var(--text-muted)]">{sub}</p>}
+        <h2 className="text-base font-semibold leading-snug text-[var(--text-main)] sm:text-lg">{title}</h2>
+        {sub && <p className="mt-1 text-xs leading-snug text-[var(--text-muted)] sm:text-sm">{sub}</p>}
       </div>
       {right}
     </div>
@@ -159,7 +159,7 @@ function CardHeader({ title, hint: sub, right }) {
 }
 
 // Switch geser dengan indikator memantul (diadaptasi dari ShiftSwitch Dashboard)
-function SegmentedSwitch({ value, onChange, options, ariaLabel, fullWidth = false, disabled = false, minH = 'min-h-14' }) {
+function SegmentedSwitch({ value, onChange, options, ariaLabel, fullWidth = false, mobileFull = false, disabled = false, minH = 'min-h-12 sm:min-h-14' }) {
   const wrapRef = useRef(null);
   const btnRefs = useRef({});
   const [ind, setInd] = useState(null);
@@ -204,7 +204,7 @@ function SegmentedSwitch({ value, onChange, options, ariaLabel, fullWidth = fals
       role="group"
       aria-label={ariaLabel}
       style={{ background: PAGE_BG }}
-      className={`relative items-stretch gap-1 rounded-2xl p-1.5 shadow-[var(--shadow-inset-hero)] ${minH} ${fullWidth ? 'flex w-full' : 'inline-flex'
+      className={`relative items-stretch gap-1 rounded-2xl p-1.5 shadow-[var(--shadow-inset-hero)] ${minH} ${fullWidth ? 'flex w-full' : mobileFull ? 'flex w-full sm:inline-flex sm:w-auto' : 'inline-flex'
         }`}
     >
       <span
@@ -231,16 +231,25 @@ function SegmentedSwitch({ value, onChange, options, ariaLabel, fullWidth = fals
             aria-pressed={active}
             disabled={disabled}
             onClick={() => onChange(o.value)}
-            className={`group relative z-10 flex flex-col items-center justify-center rounded-xl px-3 py-1.5 leading-tight outline-none transition-[color,background-color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none sm:px-5 ${fullWidth ? 'flex-1' : ''
+            className={`group relative z-10 flex flex-col items-center justify-center rounded-xl min-w-0 px-2 py-1.5 leading-tight outline-none transition-[color,background-color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none sm:px-5 ${fullWidth ? 'flex-1' : mobileFull ? 'flex-1 sm:flex-none' : ''
               } ${active ? 'text-[var(--text-inverse)]' : 'text-[var(--text-main)]'}`}
           >
-            <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold">
-              {Icon && <Icon className={`h-4 w-4 ${ICON_HOVER}`} aria-hidden="true" />}
-              {o.label}
+            <span
+              className={`flex items-center gap-1.5 whitespace-nowrap font-semibold sm:text-sm ${o.hint ? 'text-xs' : 'text-[13px]'}`}
+            >
+              {Icon && <Icon className={`h-4 w-4 shrink-0 ${ICON_HOVER}`} aria-hidden="true" />}
+              {o.shortLabel ? (
+                <>
+                  <span className="sm:hidden">{o.shortLabel}</span>
+                  <span className="hidden sm:inline">{o.label}</span>
+                </>
+              ) : (
+                o.label
+              )}
             </span>
             {o.hint && (
               <span
-                className={`whitespace-nowrap text-[11px] tabular-nums transition-colors duration-200 ${active ? 'text-[color:var(--glass-text-soft)]' : 'text-[var(--text-muted-alt)]'
+                className={`whitespace-nowrap text-[10px] tabular-nums transition-colors sm:text-[11px] duration-200 ${active ? 'text-[color:var(--glass-text-soft)]' : 'text-[var(--text-muted-alt)]'
                   }`}
               >
                 {o.hint}
@@ -326,6 +335,12 @@ const SPARKLE_CSS = `
 .sparkle-btn:hover .sp-5 { top: 25%;  left: 115%; }
 .sparkle-btn:hover .sp-6 { top: 5%;   left: 60%; }
 
+@media (max-width: 639px) {
+  .sparkle-btn { white-space: normal; text-align: center; min-height: 44px; padding: 10px 16px; }
+}
+@media (hover: none) {
+  .sparkle-btn .sp { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .sparkle-btn, .sparkle-btn .sp { transition: none; }
   .sparkle-btn .sp { display: none; }
@@ -432,7 +447,7 @@ function Popover({ open, anchorRef, onClose, width, matchWidth = false, role = '
     const p = popRef.current;
     if (!a || !p) return;
     const r = a.getBoundingClientRect();
-    const w = matchWidth ? Math.max(r.width, width || 0) : width || r.width;
+    const w = Math.min(matchWidth ? Math.max(r.width, width || 0) : width || r.width, window.innerWidth - 16);
     const h = p.offsetHeight;
     const below = window.innerHeight - r.bottom - POP_GAP - 8;
     const above = r.top - POP_GAP - 8;
@@ -546,8 +561,8 @@ function TimeColumn({ label, values, value, onPick, listRef }) {
                 tabIndex={sel ? 0 : -1}
                 onClick={() => onPick(v)}
                 className={`flex h-10 w-full items-center justify-center rounded-xl text-[15px] tabular-nums outline-none transition-[background-color,color,transform] duration-200 focus-visible:ring-2 focus-visible:ring-[color:var(--royal-300)] active:scale-95 motion-reduce:transition-none ${sel
-                    ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)]'
-                    : 'text-[var(--text-main)] hover:bg-[var(--surface-muted)]'
+                  ? 'bg-[var(--royal-600)] font-semibold text-[var(--text-inverse)]'
+                  : 'text-[var(--text-main)] hover:bg-[var(--surface-muted)]'
                   }`}
               >
                 {v}
@@ -662,7 +677,7 @@ function TimeField({ id, value, onChange, disabled = false }) {
 }
 
 const glassCard =
-  'rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)] p-4';
+  'rounded-2xl bg-[var(--glass-subtle)] border border-[var(--glass-border)] backdrop-blur-xl shadow-[var(--shadow-glass-card)]';
 
 export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) {
   const [formData, setFormData] = useState({ ...OCR_RESULT, date: todayISO() });
@@ -772,7 +787,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
   const accuracy = isManualMode ? 0 : OCR_ACCURACY;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       <style>{OCR_CSS + GLOW_CSS + SPARKLE_CSS + POP_CSS}</style>
 
       {/* HERO */}
@@ -780,19 +795,19 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
         ref={heroGlow.ref}
         onMouseMove={heroGlow.onMouseMove}
         onMouseLeave={heroGlow.onMouseLeave}
-        className="relative overflow-hidden rounded-[22px] p-5 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] lg:p-6"
+        className="relative overflow-hidden rounded-[22px] p-4 text-[var(--text-inverse)] shadow-[var(--shadow-royal-hero)] sm:p-5 lg:p-6"
         style={{ background: 'var(--grad-hero)', ...reveal(0) }}
         aria-label="Ringkasan hasil baca bukti pembayaran"
       >
         <div className="pointer-events-none absolute -left-32 -bottom-48 h-80 w-80 rounded-full bg-[var(--glass-soft)]" />
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 rounded-[22px]" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_28rem] lg:items-stretch xl:grid-cols-[1fr_32rem]">
+        <div className="relative grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_32rem]">
           {/* Kiri: judul + kontrol */}
-          <div className="relative z-10 flex flex-col gap-6">
+          <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-6">
             <div style={reveal(1, 10)}>
-              <p className="group flex flex-wrap items-center gap-x-2 gap-y-1 text-base tabular-nums text-[color:var(--glass-text-soft)]">
-                <ScanText className={`h-5 w-5 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
+              <p className="group flex flex-wrap items-center gap-x-2 gap-y-1 text-xs tabular-nums text-[color:var(--glass-text-soft)] sm:text-base">
+                <ScanText className={`h-3.5 w-3.5 sm:h-5 sm:w-5 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                 <span>Hasil baca otomatis (OCR)</span>
                 <span aria-hidden="true" className="hidden text-[color:var(--glass-text-dim)] sm:inline">
                   ·
@@ -802,30 +817,31 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
             </div>
 
             <div className="flex flex-1 flex-col justify-center gap-3" style={reveal(1, 10)}>
-              <h1 className="space-y-2.5 break-words font-semibold leading-[1.15] tracking-tight">
-                <span className="block text-2xl font-medium text-[color:var(--glass-text-soft)] sm:text-3xl lg:text-4xl xl:text-5xl">
+              <h1 className="space-y-0.5 break-words sm:space-y-2.5 font-semibold leading-[1.15] tracking-tight">
+                <span className="block text-base font-medium text-[color:var(--glass-text-soft)] sm:text-3xl lg:text-4xl xl:text-5xl">
                   Konfirmasi
                 </span>
-                <span className="block text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">bukti pembayaran</span>
+                <span className="block text-2xl sm:text-4xl lg:text-5xl xl:text-6xl">bukti pembayaran</span>
               </h1>
-              <p className="text-base text-[color:var(--glass-text-soft)]">
+              <p className="text-sm text-[color:var(--glass-text-soft)] sm:text-base">
                 Periksa dan koreksi nominal serta ID transaksi sebelum disimpan
               </p>
             </div>
 
-            <div className="mt-auto flex flex-wrap items-end gap-3" style={reveal(1, 10)}>
+            <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end" style={reveal(1, 10)}>
               <SegmentedSwitch
                 value={formData.shift}
                 onChange={setDirect('shift')}
                 options={SHIFT_OPTIONS}
                 ariaLabel="Shift kerja"
+                mobileFull
                 disabled={saved}
               />
               <button
                 type="button"
                 onClick={toggleManual}
                 disabled={saved}
-                className="group relative inline-flex min-h-14 cursor-pointer items-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-4 text-sm font-semibold text-[var(--text-inverse)] backdrop-blur-xl outline-none transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--glass-line)] hover:shadow-[var(--shadow-inset-hero-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none motion-reduce:transition-none"
+                className="group relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-3.5 text-sm sm:min-h-14 sm:w-auto sm:justify-start sm:px-4 font-semibold text-[var(--text-inverse)] backdrop-blur-xl outline-none transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--glass-line)] hover:shadow-[var(--shadow-inset-hero-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ring-on-dark)] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none motion-reduce:transition-none"
               >
                 {/* Dua label ditumpuk: ganti mode = cross-fade, lebar tombol tidak melompat */}
                 <span className="relative grid">
@@ -854,13 +870,13 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
               <div className="absolute -top-16 -right-14 h-56 w-56 rounded-full bg-[var(--glass-line)]" />
               <div className="absolute -bottom-20 left-6 h-52 w-52 rounded-full bg-[var(--glass-soft)]" />
             </div>
-            <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="relative grid grid-cols-2 gap-3">
               {/* Nominal dominan */}
               <div
                 ref={tiltAmount.ref}
                 onMouseMove={tiltAmount.onMouseMove}
                 onMouseLeave={tiltAmount.onMouseLeave}
-                className={`group sm:col-span-2 ${glassCard}`}
+                className={`group col-span-2 p-3.5 sm:p-4 ${glassCard}`}
                 style={reveal(2, 12)}
               >
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -877,7 +893,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                     {isManualMode ? 'Diisi manual' : `Akurasi ${OCR_ACCURACY}%`}
                   </span>
                 </div>
-                <p className="mt-2 break-words text-2xl font-semibold tabular-nums tracking-tight lg:text-3xl">
+                <p className="mt-2 break-words text-xl font-semibold tabular-nums tracking-tight sm:text-2xl lg:text-3xl">
                   {hasAmount ? formatRupiah(amountNumber) : 'Rp —'}
                 </p>
 
@@ -911,7 +927,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                 ref={tiltStatus.ref}
                 onMouseMove={tiltStatus.onMouseMove}
                 onMouseLeave={tiltStatus.onMouseLeave}
-                className={`group flex flex-col ${glassCard}`}
+                className={`group flex min-w-0 flex-col p-3 sm:p-4 ${glassCard}`}
                 style={reveal(3, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
@@ -922,7 +938,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                   )}
                   Status bukti
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">{isDuplicate ? 'Duplikat' : 'Belum dicek'}</p>
+                <p className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">{isDuplicate ? 'Duplikat' : 'Belum dicek'}</p>
                 <div className="mt-auto pt-3">
                   <p
                     className={`flex items-center gap-1.5 text-xs ${isDuplicate ? 'font-medium text-[var(--text-inverse)]' : 'text-[color:var(--glass-text-soft)]'
@@ -941,16 +957,16 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                 ref={tiltFill.ref}
                 onMouseMove={tiltFill.onMouseMove}
                 onMouseLeave={tiltFill.onMouseLeave}
-                className={`group flex flex-col ${glassCard}`}
+                className={`group flex min-w-0 flex-col p-3 sm:p-4 ${glassCard}`}
                 style={reveal(4, 12)}
               >
                 <p className="flex items-center gap-2 text-xs text-[color:var(--glass-text-soft)]">
                   <ListChecks className={`h-4 w-4 text-[var(--text-inverse)] ${ICON_HOVER}`} aria-hidden="true" />
                   Kolom terisi
                 </p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
+                <p className="mt-2 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl">
                   {filledCount}
-                  <span className="text-base text-[color:var(--glass-text-soft)]">/{filled.length}</span>
+                  <span className="text-sm text-[color:var(--glass-text-soft)] sm:text-base">/{filled.length}</span>
                 </p>
                 <div className="mt-auto pt-3">
                   <div
@@ -992,7 +1008,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
               <Notice kind="warning">
                 <p className="font-medium">Bukti terindikasi duplikat</p>
                 <p className="mt-1">
-                  ID transaksi <span className="font-mono">{formData.referenceId}</span> dengan nominal{' '}
+                  ID transaksi <span className="break-all font-mono">{formData.referenceId}</span> dengan nominal{' '}
                   {formatRupiah(formData.amount)} sudah pernah diunggah. Transaksi tetap bisa disimpan dan akan
                   ditandai Perlu ditinjau untuk pemilik
                 </p>
@@ -1003,9 +1019,9 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
       )}
 
       {/* BUKTI + FORM */}
-      <section className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+      <section className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         {/* Bukti yang diunggah */}
-        <div className="card flex flex-col" style={reveal(6)}>
+        <div className="card flex min-w-0 flex-col max-sm:!p-3" style={reveal(6)}>
           <CardHeader
             title="Bukti yang diunggah"
             hint="Hasil baca otomatis bisa keliru, cocokkan dengan gambar"
@@ -1013,9 +1029,9 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
           />
           <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--surface-muted)] p-2">
             {imgState === 'error' ? (
-              <div className="group grid place-items-center gap-2 py-16 text-center">
+              <div className="group grid place-items-center gap-2 py-10 text-center sm:py-16">
                 <ImageOff className={`h-6 w-6 text-[var(--text-muted)] ${ICON_HOVER}`} aria-hidden="true" />
-                <p className="text-sm font-medium text-[var(--text-main)]">Gambar bukti tidak bisa dimuat</p>
+                <p className="text-[13px] font-medium text-[var(--text-main)] sm:text-sm">Gambar bukti tidak bisa dimuat</p>
                 <p className="text-xs text-[var(--text-muted)]">Nominal tetap bisa diisi dari struk asli</p>
               </div>
             ) : (
@@ -1028,7 +1044,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                   alt="Bukti pembayaran"
                   onLoad={() => setImgState('ok')}
                   onError={() => setImgState('error')}
-                  className={`max-h-80 rounded-lg bg-[var(--surface-card)] object-contain transition-[opacity,transform] duration-500 hover:scale-[1.03] motion-reduce:transition-none ${imgState === 'ok' ? 'opacity-100' : 'opacity-0'
+                  className={`max-h-64 max-w-full rounded-lg bg-[var(--surface-card)] object-contain sm:max-h-80 transition-[opacity,transform] duration-500 hover:scale-[1.03] motion-reduce:transition-none ${imgState === 'ok' ? 'opacity-100' : 'opacity-0'
                     }`}
                 />
               </>
@@ -1037,7 +1053,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
         </div>
 
         {/* Form hasil ekstraksi */}
-        <div className="card" style={reveal(7)}>
+        <div className="card min-w-0 max-sm:!p-3" style={reveal(7)}>
           <CardHeader
             title="Detail transaksi"
             hint="Koreksi bila ada yang tidak cocok dengan bukti"
@@ -1106,7 +1122,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                     onChange={set('referenceId')}
                     disabled={saved}
                     placeholder="NMID-992144812"
-                    className={`${field} font-mono`}
+                    className={`${field} font-mono max-sm:text-base`}
                   />
                 </GlowField>
                 <p className={hint}>Dipakai untuk cek duplikat</p>
@@ -1133,7 +1149,7 @@ export default function OcrConfirmationPage({ onConfirmTransaction, onCancel }) 
                   value={formData.title}
                   onChange={set('title')}
                   disabled={saved}
-                  className={field}
+                  className={`${field} max-sm:text-base`}
                 />
               </GlowField>
             </div>
